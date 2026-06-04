@@ -69,7 +69,8 @@ A typed object the tools read/write:
 - `make_chart(data_spec)` → matplotlib PNG (quantitative data only)
 - `write_section(id, arabic_html, figures[], mcqs[])` → saves a completed section
 - `review_progress()` → which outline sections are done vs. pending
-- `web_search(query)` *(optional)* → enrich a confusing term
+- `web_search(query)` → enrich/clarify a confusing term (core tool; requires a
+  search backend + key, chosen at implementation time)
 - `finalize()` → assemble RTL HTML + render PDF via Playwright
 
 ### 4.4 Loaders (ingestion)
@@ -83,8 +84,7 @@ A `normalize` step (callable as a tool result or pre-step) strips filler,
 de-duplicates, and merges into readable text before outlining.
 
 ### 4.5 Rendering
-- HTML template: `<html dir="rtl" lang="ar">`, embedded Arabic web font
-  (e.g. **Cairo** or **Noto Naskh Arabic**).
+- HTML template: `<html dir="rtl" lang="ar">`, embedded **Cairo** Arabic web font.
 - English terms / code wrapped in `<span dir="ltr" style="unicode-bidi:isolate">`
   so they sit correctly inside RTL text.
 - Mermaid diagrams render in their natural LTR direction, centered in the RTL flow.
@@ -115,8 +115,9 @@ Every figure gets an Egyptian-Arabic caption. No figures-for-figures'-sake.
 ## 8. Cross-cutting
 
 ### 8.1 Config
-Small config (model/provider, output dir, Arabic font, questions-per-section,
-step/token budget, enable/disable web_search) via env vars + sensible defaults.
+Small config (model/provider, output dir, Arabic font [default Cairo],
+questions-per-section, step/token budget, web-search backend + key) via env vars
++ sensible defaults.
 
 ### 8.2 Error handling
 Loaders and the Mermaid validator fail soft (warning + text/skip fallback). A
