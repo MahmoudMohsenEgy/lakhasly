@@ -30,6 +30,7 @@ is far easier for them to absorb. The agent:
 | Area | Decision |
 |---|---|
 | Language/runtime | Python |
+| Code architecture | **Ports-and-adapters**: every varying behavior is a `typing.Protocol` in `interfaces.py`; concretes implement it; a `composition.build_agent` root wires them from `Config`. Swapping any piece = new adapter + one line. |
 | Orchestration | LangGraph, as a **tool-calling agent loop** (plan→act→observe), not a fixed pipeline |
 | Agent scope | Task-level: one source per run |
 | Inputs | Pasted/plain text, web article URLs, VTT/SRT subtitles, PDF files |

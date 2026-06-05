@@ -1,0 +1,31 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:06.000
+Okay, so in this lesson we're going to talk about gradient descent.
+
+00:00:06.000 --> 00:00:12.000
+Gradient descent is the algorithm that almost every neural network uses to learn.
+
+00:00:12.000 --> 00:00:19.000
+The basic idea is simple: we have a loss function that measures how wrong our model is,
+
+00:00:19.000 --> 00:00:23.000
+and we want to make that loss as small as possible.
+
+00:00:23.000 --> 00:00:31.000
+So we start with random weights, we compute the gradient of the loss with respect to the weights,
+
+00:00:31.000 --> 00:00:36.000
+and the gradient tells us the direction of steepest increase.
+
+00:00:36.000 --> 00:00:43.000
+Since we want to decrease the loss, we take a step in the opposite direction of the gradient.
+
+00:00:43.000 --> 00:00:49.000
+The size of that step is controlled by a number called the learning rate.
+
+00:00:49.000 --> 00:00:56.000
+If the learning rate is too big, we might overshoot the minimum and never converge.
+
+00:00:56.000 --> 00:01:01.000
+If it's too small, training will be correct but very slow.
