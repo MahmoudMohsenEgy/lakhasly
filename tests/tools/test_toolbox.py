@@ -85,3 +85,9 @@ def test_render_mermaid_failsoft_on_exception(tmp_path):
                 builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg)}
     out = tools["render_mermaid"].invoke({"code": "graph TD; A-->B;"})
     assert "error" in out.lower() and "chromium crashed" in out
+
+def test_finalize_refuses_without_outline(tmp_path):
+    state = StudyState(source_ref="x")
+    t = _tools(state, tmp_path)
+    msg = t["finalize"].invoke({"title": "T"})
+    assert "propose_outline" in msg and state.pdf_path == ""

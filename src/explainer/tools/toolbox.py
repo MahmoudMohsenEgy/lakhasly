@@ -67,6 +67,8 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
     @tool
     def finalize(title: str) -> str:
         """Assemble the document and render the final PDF. Refuses if any section is unwritten."""
+        if not state.outline:
+            return "Cannot finalize: propose_outline has not been called yet."
         done = {s.id for s in state.sections}
         missing = [o.id for o in state.outline if o.id not in done]
         if missing:

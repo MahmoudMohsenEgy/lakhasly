@@ -40,3 +40,29 @@ def test_system_prompt_rules():
     p = SYSTEM_PROMPT
     assert "Egyptian" in p and "[[" in p and "finalize" in p
     assert ("every section" in p.lower()) or ("all sections" in p.lower())
+
+def test_run_handles_recursion_error(monkeypatch):
+    import explainer.agent.langgraph_agent as mod
+    from langgraph.errors import GraphRecursionError
+    captured = {}
+    cfg = Config(azure_endpoint="x", azure_deployment="d")
+    class FakeLLM:
+        def chat_model(self): return "M"
+    class FakeDiagram:
+        def close(self): captured["closed"] = True
+    class FakeRegistry:
+        def load(self, ref, declared_type="auto"): return LoadedSource(text="hi")
+    class FakeNorm:
+        def normalize(self, t): return t
+    def fake_create(model, tools):
+        class A:
+            def invoke(self, payload, config): raise GraphRecursionError("limit")
+        return A()
+    monkeypatch.setattr(mod, "create_react_agent", fake_create)
+    agent = LangGraphAgent(registry=FakeRegistry(), normalizer=FakeNorm(), llm_provider=FakeLLM(),
+        search=object(), diagrams=FakeDiagram(), charts=object(), builder=object(),
+        renderer=object(), assets=object(), config=cfg)
+    state = agent.run("x.txt")
+    assert state.pdf_path == ""
+    assert captured["closed"] is True
+    assert any("budget" in e.lower() for e in state.errors)

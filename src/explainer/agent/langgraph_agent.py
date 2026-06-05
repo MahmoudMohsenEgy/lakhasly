@@ -1,4 +1,5 @@
 from langgraph.prebuilt import create_react_agent
+from langgraph.errors import GraphRecursionError
 from explainer.config import Config
 from explainer.state import StudyState
 from explainer.tools.toolbox import build_tools
@@ -55,6 +56,8 @@ class LangGraphAgent:
             agent.invoke(
                 {"messages": [("system", SYSTEM_PROMPT), ("user", self._user_message(state))]},
                 config={"recursion_limit": self._config.step_budget})
+        except GraphRecursionError:
+            state.errors.append("Step budget exhausted before finalize.")
         finally:
             self._diagrams.close()
         if not state.pdf_path:
