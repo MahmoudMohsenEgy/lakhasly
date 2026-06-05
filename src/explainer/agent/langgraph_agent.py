@@ -59,7 +59,10 @@ class LangGraphAgent:
         except GraphRecursionError:
             state.errors.append("Step budget exhausted before finalize.")
         finally:
-            self._diagrams.close()
+            try:
+                self._diagrams.close()
+            except Exception:  # cleanup must never mask the run's real outcome
+                pass
         if not state.pdf_path:
             state.errors.append("Agent finished without producing a PDF (budget hit or no finalize).")
         return state

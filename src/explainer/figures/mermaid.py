@@ -13,22 +13,25 @@ _HTML = """<!doctype html><html><head>
   };
 </script></body></html>"""
 
-class PlaywrightMermaidRenderer:
-    def __init__(self):
-        self._pw = None
-        self._browser = None
-        self._page = None
 
-    def _ensure(self):
-        if self._page is None:
-            self._pw = sync_playwright().start()
-            self._browser = self._pw.chromium.launch(headless=True)
-            self._page = self._browser.new_page()
-            self._page.set_content(_HTML, wait_until="networkidle")
+class PlaywrightMermaidRenderer:
+    """Renders one Mermaid diagram to an SVG file via headless Chromium.
+
+    Each render is fully self-contained (launch -> render -> close within the
+    call) so it stays safe when LangGraph runs the tool in a worker thread:
+    Playwright sync objects must not be used across threads, which a persistent
+    browser closed from a different thread would violate.
+    """
 
     def render(self, code: str, out_path: str) -> tuple[bool, str]:
-        self._ensure()
-        result = self._page.evaluate("(c) => window.renderMermaid(c)", code)
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            try:
+                page = browser.new_page()
+                page.set_content(_HTML, wait_until="networkidle")
+                result = page.evaluate("(c) => window.renderMermaid(c)", code)
+            finally:
+                browser.close()
         if not result.get("ok"):
             return False, result.get("error", "unknown mermaid error")
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
@@ -36,8 +39,5 @@ class PlaywrightMermaidRenderer:
         return True, out_path
 
     def close(self) -> None:
-        if self._browser is not None:
-            self._browser.close()
-        if self._pw is not None:
-            self._pw.stop()
-        self._pw = self._browser = self._page = None
+        """No persistent resources to release; kept for DiagramRenderer conformance."""
+        return None

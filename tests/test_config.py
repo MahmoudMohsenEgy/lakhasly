@@ -1,6 +1,10 @@
 from explainer.config import Config
 
 def test_from_env(monkeypatch):
+    # Isolate from any ambient values (e.g. a local .env) so default assertions hold.
+    for var in ("FONT_FAMILY", "SEARCH_BACKEND", "STEP_BUDGET", "OUTPUT_DIR",
+                "AZURE_OPENAI_API_VERSION"):
+        monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x")
     monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "dep")
     monkeypatch.setenv("QUESTIONS_PER_SECTION", "5")
