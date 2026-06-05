@@ -15,7 +15,7 @@ Rules:
 - Keep technical terms and code in English, and mark EACH one as [[term]] so it renders left-to-right.
 - First call propose_outline to split the content into ordered sections covering EVERY topic. Group related ideas into a reasonable number of sections; do NOT over-split short content into many tiny sections.
 - Then write EVERY section with write_section: an Arabic explanation (HTML), optional figures, and review MCQs attached to that section.
-- Decide a sensible TOTAL number of MCQs yourself: enough to test the key ideas without overwhelming the reader. It is fine for a minor section to have zero. All MCQs are gathered into one review section at the end of the document, so avoid redundant questions across sections.
+- Build ONE review quiz for the whole document: decide a sensible TOTAL number of MCQs — about 6 to 10 for a short source, more for a longer one — covering the most important ideas. Don't quiz every minor point, but DO NOT skip the quiz: there must always be a review quiz. Attach MCQs to your CONTENT sections via write_section; do NOT create a separate section just for the quiz — the document automatically renders one review-quiz section (with an answer key) at the end. Avoid redundant questions across sections.
 - Use render_mermaid for diagrams of flows/relationships (fix and retry if it returns an error). Use make_chart only for real data. Reuse provided source images when relevant.
 - Use web_search to clarify a confusing term when needed.
 - Call review_progress to check what's left. You MUST write ALL sections.
@@ -42,9 +42,9 @@ class LangGraphAgent:
         imgs = "\n".join(f"- {im.id}: {im.path}" for im in state.images) or "(none)"
         return (f"Source content to explain:\n\n{state.normalized_text}\n\n"
                 f"Available source images you may reuse as figures:\n{imgs}\n\n"
-                f"Decide a concise, appropriate number of review MCQs for the whole document "
-                f"(focus on the key ideas, avoid redundancy; at most about "
-                f"{self._config.questions_per_section} per section, and skip trivial sections).")
+                f"Include a review quiz covering the key ideas — aim for roughly 6 to 10 "
+                f"questions total for a source this size (at most about "
+                f"{self._config.questions_per_section} per section). Do not skip the quiz.")
 
     def run(self, source_ref: str, source_type: str = "auto") -> StudyState:
         loaded = self._registry.load(source_ref, source_type)
