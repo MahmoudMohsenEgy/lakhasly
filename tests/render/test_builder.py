@@ -15,14 +15,18 @@ def test_conforms(tmp_path):
 def test_build_html(tmp_path):
     png = tmp_path / "f.png"; png.write_bytes(b"\x89PNGfake")
     state = StudyState(source_ref="x")
-    sec = Section(id="s1", title="مقدمة", arabic_html='<p>ال[[loss]] مهم</p>')
+    sec = Section(id="s1", title="مقدمة عن ال[[title term]]", arabic_html='<p>ال[[loss]] مهم</p>')
     sec.figures.append(Figure(kind="chart", path=str(png), caption="رسم لل[[chart term]]"))
     sec.mcqs.append(MCQ(question="ما هو ال[[loss]]؟", options=["أ", "ب"],
                         answer_index=1, explanation="لأن..."))
     state.sections.append(sec)
-    html = _builder(tmp_path).build(state, title="عنوان")
+    html = _builder(tmp_path).build(state, title="عنوان [[doc term]]")
     assert "عنوان" in html
     assert '<span dir="ltr" class="term">loss</span>' in html
+    # document title and section title are term-formatted (no raw [[ ]] in headings)
+    assert '<span dir="ltr" class="term">doc term</span>' in html
+    assert '<span dir="ltr" class="term">title term</span>' in html
+    assert "[[" not in html
     assert "data:image/png;base64," in html
     # figure caption is term-formatted (markers converted, not shown literally)
     assert '<span dir="ltr" class="term">chart term</span>' in html

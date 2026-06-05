@@ -29,7 +29,7 @@ class Jinja2HtmlBuilder:
                      "caption_html": self._fmt.format(f.caption),
                      "alt": f.caption.replace("[[", "").replace("]]", "")}
                     for f in sec.figures]
-            sections.append({"title": sec.title,
+            sections.append({"title": self._fmt.format(sec.title),
                              "arabic_html": self._fmt.format(sec.arabic_html),
                              "figures": figs})
             # All MCQs are gathered into one review section at the end, numbered continuously.
@@ -42,4 +42,5 @@ class Jinja2HtmlBuilder:
                                 "letter": chr(ord('A') + mcq.answer_index),
                                 "explanation": self._fmt.format(mcq.explanation)})
         return self._env.get_template("document.html.j2").render(
-            title=title, css=css, sections=sections, questions=questions, answers=answers)
+            title=self._fmt.format(title), css=css,
+            sections=sections, questions=questions, answers=answers)
