@@ -22,15 +22,14 @@ class Jinja2HtmlBuilder:
 
     def build(self, state: StudyState, title: str) -> str:
         css = (_TEMPLATES / "styles.css").read_text(encoding="utf-8")
-        sections, answers, counter = [], [], 0
+        sections, answers = [], []
         for sec in state.sections:
             figs = [{"data_uri": self._data_uri(f.path), "caption": f.caption} for f in sec.figures]
             mcqs = []
-            for mcq in sec.mcqs:
-                counter += 1
+            for idx, mcq in enumerate(sec.mcqs, start=1):
                 mcqs.append({"question": self._fmt.format(mcq.question),
                              "options": [self._fmt.format(o) for o in mcq.options]})
-                answers.append({"label": f"{sec.title} - {counter}",
+                answers.append({"label": f"{sec.title} - {idx}",
                                 "letter": chr(ord('A') + mcq.answer_index),
                                 "explanation": self._fmt.format(mcq.explanation)})
             sections.append({"title": sec.title,
