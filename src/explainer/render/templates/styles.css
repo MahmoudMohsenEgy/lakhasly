@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+html { direction: rtl; }
+body { font-family: 'Cairo', sans-serif; line-height: 1.9; margin: 2.5rem; color: #1a1a1a; }
+h1, h2 { color: #0b3d91; }
+.term { unicode-bidi: isolate; font-family: 'Courier New', monospace; }
+figure { margin: 1.2rem auto; text-align: center; }
+figure img { max-width: 100%; }
+figcaption { font-size: 0.9rem; color: #555; }
+.mcq { background: #f4f7fb; border-right: 4px solid #0b3d91; padding: 0.8rem 1rem; margin: 0.8rem 0; }
+.answer-key { page-break-before: always; }
+.answer-key li { margin-bottom: 0.6rem; }
