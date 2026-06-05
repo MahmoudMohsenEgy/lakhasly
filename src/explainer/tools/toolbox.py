@@ -28,7 +28,10 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
     def render_mermaid(code: str) -> str:
         """Validate and render a Mermaid diagram to SVG. On failure returns the error to fix."""
         out = assets.allocate(".svg")
-        ok, result = diagrams.render(code, out)
+        try:
+            ok, result = diagrams.render(code, out)
+        except Exception as e:
+            return f"Mermaid error (fix and retry): {e}"
         return f"Diagram saved at {result}" if ok else f"Mermaid error (fix and retry): {result}"
 
     @tool

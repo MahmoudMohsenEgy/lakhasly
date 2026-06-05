@@ -72,3 +72,16 @@ def test_render_mermaid_and_chart_and_search(tmp_path):
     assert "error" in t["render_mermaid"].invoke({"code": "bad"}).lower()
     assert "saved" in t["make_chart"].invoke({"spec": {"type": "bar", "x": [1], "y": [1]}}).lower()
     assert "U" in t["web_search"].invoke({"query": "q"})
+
+def test_render_mermaid_failsoft_on_exception(tmp_path):
+    from explainer.config import Config
+    state = StudyState(source_ref="x")
+    class RaisingDiagram:
+        def render(self, code, out_path): raise RuntimeError("chromium crashed")
+        def close(self): pass
+    cfg = Config(azure_endpoint="x", azure_deployment="d", output_dir=str(tmp_path))
+    tools = {t.name: t for t in build_tools(state, search=FakeSearch(), diagrams=RaisingDiagram(),
+                charts=FakeChart(), assets=FakeAssets(str(tmp_path)),
+                builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg)}
+    out = tools["render_mermaid"].invoke({"code": "graph TD; A-->B;"})
+    assert "error" in out.lower() and "chromium crashed" in out
