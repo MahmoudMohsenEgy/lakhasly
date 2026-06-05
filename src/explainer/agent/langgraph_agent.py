@@ -13,8 +13,9 @@ Goal: produce a COMPLETE Egyptian-Arabic study document from the source text, th
 Rules:
 - Write in Egyptian Arabic (عامية مصرية), clear and friendly.
 - Keep technical terms and code in English, and mark EACH one as [[term]] so it renders left-to-right.
-- First call propose_outline to split the content into ordered sections covering EVERY topic.
-- Then write EVERY section with write_section: an Arabic explanation (HTML), optional figures, and the requested number of MCQs.
+- First call propose_outline to split the content into ordered sections covering EVERY topic. Group related ideas into a reasonable number of sections; do NOT over-split short content into many tiny sections.
+- Then write EVERY section with write_section: an Arabic explanation (HTML), optional figures, and review MCQs attached to that section.
+- Decide a sensible TOTAL number of MCQs yourself: enough to test the key ideas without overwhelming the reader. It is fine for a minor section to have zero. All MCQs are gathered into one review section at the end of the document, so avoid redundant questions across sections.
 - Use render_mermaid for diagrams of flows/relationships (fix and retry if it returns an error). Use make_chart only for real data. Reuse provided source images when relevant.
 - Use web_search to clarify a confusing term when needed.
 - Call review_progress to check what's left. You MUST write ALL sections.
@@ -41,7 +42,9 @@ class LangGraphAgent:
         imgs = "\n".join(f"- {im.id}: {im.path}" for im in state.images) or "(none)"
         return (f"Source content to explain:\n\n{state.normalized_text}\n\n"
                 f"Available source images you may reuse as figures:\n{imgs}\n\n"
-                f"Produce {self._config.questions_per_section} MCQs per section.")
+                f"Decide a concise, appropriate number of review MCQs for the whole document "
+                f"(focus on the key ideas, avoid redundancy; at most about "
+                f"{self._config.questions_per_section} per section, and skip trivial sections).")
 
     def run(self, source_ref: str, source_type: str = "auto") -> StudyState:
         loaded = self._registry.load(source_ref, source_type)

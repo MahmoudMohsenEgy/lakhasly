@@ -22,21 +22,24 @@ class Jinja2HtmlBuilder:
 
     def build(self, state: StudyState, title: str) -> str:
         css = (_TEMPLATES / "styles.css").read_text(encoding="utf-8")
-        sections, answers = [], []
+        sections, questions, answers = [], [], []
+        n = 0
         for sec in state.sections:
             figs = [{"data_uri": self._data_uri(f.path),
                      "caption_html": self._fmt.format(f.caption),
                      "alt": f.caption.replace("[[", "").replace("]]", "")}
                     for f in sec.figures]
-            mcqs = []
-            for idx, mcq in enumerate(sec.mcqs, start=1):
-                mcqs.append({"question": self._fmt.format(mcq.question),
-                             "options": [self._fmt.format(o) for o in mcq.options]})
-                answers.append({"label": f"{sec.title} - {idx}",
-                                "letter": chr(ord('A') + mcq.answer_index),
-                                "explanation": self._fmt.format(mcq.explanation)})
             sections.append({"title": sec.title,
                              "arabic_html": self._fmt.format(sec.arabic_html),
-                             "figures": figs, "mcqs": mcqs})
+                             "figures": figs})
+            # All MCQs are gathered into one review section at the end, numbered continuously.
+            for mcq in sec.mcqs:
+                n += 1
+                questions.append({"n": n,
+                                  "question": self._fmt.format(mcq.question),
+                                  "options": [self._fmt.format(o) for o in mcq.options]})
+                answers.append({"n": n,
+                                "letter": chr(ord('A') + mcq.answer_index),
+                                "explanation": self._fmt.format(mcq.explanation)})
         return self._env.get_template("document.html.j2").render(
-            title=title, css=css, sections=sections, answers=answers)
+            title=title, css=css, sections=sections, questions=questions, answers=answers)

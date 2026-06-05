@@ -11,13 +11,17 @@
       <figure><img src="{{ fig.data_uri }}" alt="{{ fig.alt }}">
         <figcaption>{{ fig.caption_html | safe }}</figcaption></figure>
     {% endfor %}
-    {% for mcq in sec.mcqs %}
-      <div class="mcq"><p><strong>{{ loop.index }}. {{ mcq.question | safe }}</strong></p>
-        <ol type="A">{% for opt in mcq.options %}<li>{{ opt | safe }}</li>{% endfor %}</ol></div>
-    {% endfor %}
   </section>
 {% endfor %}
-<section class="answer-key"><h2>مفتاح الإجابات</h2><ol>
-{% for ans in answers %}<li>{{ ans.label }}: <strong>{{ ans.letter }}</strong> — {{ ans.explanation | safe }}</li>{% endfor %}
-</ol></section>
+{% if questions %}
+<section class="quiz"><h2>أسئلة المراجعة</h2>
+{% for q in questions %}
+  <div class="mcq"><p><strong>{{ q.n }}. {{ q.question | safe }}</strong></p>
+    <ol type="A">{% for opt in q.options %}<li>{{ opt | safe }}</li>{% endfor %}</ol></div>
+{% endfor %}
+</section>
+<section class="answer-key"><h2>مفتاح الإجابات</h2>
+{% for ans in answers %}<p>{{ ans.n }}. <strong>{{ ans.letter }}</strong> — {{ ans.explanation | safe }}</p>{% endfor %}
+</section>
+{% endif %}
 </body></html>

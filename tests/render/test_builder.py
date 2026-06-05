@@ -27,16 +27,28 @@ def test_build_html(tmp_path):
     # figure caption is term-formatted (markers converted, not shown literally)
     assert '<span dir="ltr" class="term">chart term</span>' in html
     assert "[[chart term]]" not in html
+    # MCQs live in a single review section at the end, plus the answer key
+    assert "أسئلة المراجعة" in html
     assert "مفتاح الإجابات" in html and "B" in html
     assert "family=Cairo:wght@400;700&display=swap" in html   # raw & preserved, not &amp;
     assert "&#39;" not in html                                  # single quotes not escaped
 
-def test_answer_key_per_section_numbering(tmp_path):
+def test_quiz_consolidated_with_continuous_numbering(tmp_path):
     state = StudyState(source_ref="x")
     s1 = Section(id="s1", title="الأول", arabic_html="<p>a</p>")
-    s1.mcqs.append(MCQ(question="q1", options=["a", "b"], answer_index=0, explanation="e"))
+    s1.mcqs.append(MCQ(question="qONE", options=["a", "b"], answer_index=0, explanation="e1"))
     s2 = Section(id="s2", title="الثاني", arabic_html="<p>b</p>")
-    s2.mcqs.append(MCQ(question="q2", options=["a", "b"], answer_index=1, explanation="e"))
+    s2.mcqs.append(MCQ(question="qTWO", options=["a", "b"], answer_index=1, explanation="e2"))
     state.sections.extend([s1, s2])
     html = _builder(tmp_path).build(state, title="t")
-    assert "الأول - 1" in html and "الثاني - 1" in html   # per-section numbering, not global
+    # both questions appear in the single review section, numbered continuously 1..2
+    assert "أسئلة المراجعة" in html
+    assert "1. qONE" in html and "2. qTWO" in html
+    # answer key uses the same continuous numbers
+    assert "1. <strong>A</strong>" in html and "2. <strong>B</strong>" in html
+
+def test_no_quiz_section_when_no_mcqs(tmp_path):
+    state = StudyState(source_ref="x")
+    state.sections.append(Section(id="s1", title="بدون أسئلة", arabic_html="<p>a</p>"))
+    html = _builder(tmp_path).build(state, title="t")
+    assert "أسئلة المراجعة" not in html and "مفتاح الإجابات" not in html
