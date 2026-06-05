@@ -16,7 +16,7 @@ def test_build_html(tmp_path):
     png = tmp_path / "f.png"; png.write_bytes(b"\x89PNGfake")
     state = StudyState(source_ref="x")
     sec = Section(id="s1", title="مقدمة", arabic_html='<p>ال[[loss]] مهم</p>')
-    sec.figures.append(Figure(kind="chart", path=str(png), caption="رسم"))
+    sec.figures.append(Figure(kind="chart", path=str(png), caption="رسم لل[[chart term]]"))
     sec.mcqs.append(MCQ(question="ما هو ال[[loss]]؟", options=["أ", "ب"],
                         answer_index=1, explanation="لأن..."))
     state.sections.append(sec)
@@ -24,6 +24,9 @@ def test_build_html(tmp_path):
     assert "عنوان" in html
     assert '<span dir="ltr" class="term">loss</span>' in html
     assert "data:image/png;base64," in html
+    # figure caption is term-formatted (markers converted, not shown literally)
+    assert '<span dir="ltr" class="term">chart term</span>' in html
+    assert "[[chart term]]" not in html
     assert "مفتاح الإجابات" in html and "B" in html
     assert "family=Cairo:wght@400;700&display=swap" in html   # raw & preserved, not &amp;
     assert "&#39;" not in html                                  # single quotes not escaped

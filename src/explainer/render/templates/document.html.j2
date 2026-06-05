@@ -8,8 +8,8 @@
     <h2>{{ sec.title }}</h2>
     {{ sec.arabic_html | safe }}
     {% for fig in sec.figures %}
-      <figure><img src="{{ fig.data_uri }}" alt="{{ fig.caption }}">
-        <figcaption>{{ fig.caption }}</figcaption></figure>
+      <figure><img src="{{ fig.data_uri }}" alt="{{ fig.alt }}">
+        <figcaption>{{ fig.caption_html | safe }}</figcaption></figure>
     {% endfor %}
     {% for mcq in sec.mcqs %}
       <div class="mcq"><p><strong>{{ loop.index }}. {{ mcq.question | safe }}</strong></p>

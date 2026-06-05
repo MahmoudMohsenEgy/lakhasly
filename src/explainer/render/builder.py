@@ -24,7 +24,10 @@ class Jinja2HtmlBuilder:
         css = (_TEMPLATES / "styles.css").read_text(encoding="utf-8")
         sections, answers = [], []
         for sec in state.sections:
-            figs = [{"data_uri": self._data_uri(f.path), "caption": f.caption} for f in sec.figures]
+            figs = [{"data_uri": self._data_uri(f.path),
+                     "caption_html": self._fmt.format(f.caption),
+                     "alt": f.caption.replace("[[", "").replace("]]", "")}
+                    for f in sec.figures]
             mcqs = []
             for idx, mcq in enumerate(sec.mcqs, start=1):
                 mcqs.append({"question": self._fmt.format(mcq.question),
