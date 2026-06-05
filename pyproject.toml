@@ -1,0 +1,19 @@
+[project]
+name = "explainer"
+version = "0.1.0"
+description = "Egyptian-Arabic content explainer agent"
+requires-python = ">=3.11"
+dependencies = [
+  "langgraph>=0.2.0", "langchain>=0.3.0", "langchain-openai>=0.2.0", "langchain-core>=0.3.0",
+  "playwright>=1.44", "matplotlib>=3.8", "pymupdf>=1.24", "trafilatura>=1.8",
+  "webvtt-py>=0.5", "jinja2>=3.1", "tavily-python>=0.5", "ddgs>=6.0", "python-dotenv>=1.0",
+]
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12"]
+[project.scripts]
+explain = "explainer.cli:main"
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+[tool.setuptools.packages.find]
+where = ["src"]
