@@ -8,6 +8,7 @@ dependencies = [
   "playwright>=1.44", "matplotlib>=3.8", "pymupdf>=1.24", "trafilatura>=1.8",
   "webvtt-py>=0.5", "jinja2>=3.1", "tavily-python>=0.5", "ddgs>=6.0", "python-dotenv>=1.0",
   "fastapi>=0.110", "uvicorn>=0.29",
+  "google-api-python-client>=2.100", "google-auth>=2.30", "google-auth-oauthlib>=1.2",
 ]
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-mock>=3.12", "httpx>=0.27"]
