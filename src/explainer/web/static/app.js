@@ -28,6 +28,13 @@ const STRINGS = {
     untitled: "Untitled module",
     errNoContent: "Paste some content to explain first.",
     errNetwork: "Could not reach the server. Is it still running?",
+    connectDrive: "Connect Google Drive",
+    driveConnected: "Saved to Drive",
+    uploadingDrive: "Uploading to Drive…",
+    savedToDrive: "Saved to Drive",
+    openInDrive: "Open in Drive",
+    uploadToDrive: "Upload to Drive",
+    uploadFailedDrive: "Drive upload failed",
     htmlLang: "en", dir: "ltr", locale: "en-GB",
   },
   ar: {
@@ -56,6 +63,13 @@ const STRINGS = {
     untitled: "موديول من غير اسم",
     errNoContent: "الصق شوية محتوى الأول.",
     errNetwork: "مش قادر أوصل للسيرفر. لسه شغّال؟",
+    connectDrive: "اربط جوجل درايف",
+    driveConnected: "متصل بدرايف",
+    uploadingDrive: "بنرفع على درايف…",
+    savedToDrive: "اتحفظت على درايف",
+    openInDrive: "افتح في درايف",
+    uploadToDrive: "ارفع على درايف",
+    uploadFailedDrive: "الرفع على درايف فشل",
     htmlLang: "ar", dir: "rtl", locale: "ar-EG",
   },
 };
@@ -84,11 +98,14 @@ const el = {
   resultNewBtn: $("#resultNewBtn"),
   errorMessage: $("#errorMessage"),
   errorRetry: $("#errorRetry"),
+  driveBtn: $("#driveBtn"),
+  driveBtnLabel: $("#driveBtnLabel"),
 };
 
 let lang = localStorage.getItem("sl-lang") || "en";
 let theme = localStorage.getItem("sl-theme") || "dark";
 let pollTimer = null;
+let driveConnected = false;
 
 /* ---- i18n + theme application ---- */
 function t(key) { return STRINGS[lang][key]; }
@@ -108,6 +125,8 @@ function applyLang(next) {
     if (v != null) node.setAttribute("placeholder", v);
   });
   renderLibrary(lastModules); // re-render dates in the new locale
+  if (el.driveBtn && !el.driveBtn.hidden)
+    el.driveBtnLabel.textContent = driveConnected ? t("driveConnected") : t("connectDrive");
 }
 
 function applyTheme(next) {
@@ -161,6 +180,18 @@ async function loadLibrary() {
     const res = await fetch("/api/modules");
     if (res.ok) renderLibrary(await res.json());
   } catch { /* offline: keep what we have */ }
+}
+
+async function loadDriveStatus() {
+  try {
+    const res = await fetch("/api/drive/status");
+    if (!res.ok) return;
+    const s = await res.json();
+    el.driveBtn.hidden = !s.configured;
+    driveConnected = s.connected;
+    el.driveBtn.dataset.connected = s.connected ? "true" : "false";
+    el.driveBtnLabel.textContent = s.connected ? t("driveConnected") : t("connectDrive");
+  } catch { /* ignore */ }
 }
 
 /* ---- Result ---- */
@@ -275,6 +306,7 @@ applyTheme(theme);
 applyLang(lang);
 showView("compose");
 loadLibrary();
+loadDriveStatus();
 
 /* test/demo hook: render a fake progress state without a real run */
 window.__demoStage = (stage, done, total, detail) => {
