@@ -17,11 +17,21 @@ def is_safe_id(module_id: str) -> bool:
     return bool(_SAFE_ID.match(module_id))
 
 
-def write_meta(module_dir: Path, name: str, created_at: str) -> None:
+def write_meta(module_dir: Path, name: str, created_at: str, drive_link: str = "") -> None:
+    data = {"name": name, "created_at": created_at}
+    if drive_link:
+        data["drive_link"] = drive_link
     (Path(module_dir) / "meta.json").write_text(
-        json.dumps({"name": name, "created_at": created_at}, ensure_ascii=False),
-        encoding="utf-8",
-    )
+        json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def set_drive_link(modules_dir: Path, module_id: str, drive_link: str) -> None:
+    if not is_safe_id(module_id):
+        raise ValueError("invalid module id")
+    meta = Path(modules_dir) / module_id / "meta.json"
+    data = json.loads(meta.read_text(encoding="utf-8")) if meta.exists() else {}
+    data["drive_link"] = drive_link
+    meta.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
 
 def list_modules(modules_dir: Path) -> list[dict]:
@@ -41,6 +51,7 @@ def list_modules(modules_dir: Path) -> list[dict]:
                 "id": d.name,
                 "name": m.get("name", d.name),
                 "created_at": m.get("created_at", ""),
+                "drive_link": m.get("drive_link", ""),
                 "pdf_url": f"/api/modules/{d.name}/pdf",
             })
     out.sort(key=lambda x: x["created_at"], reverse=True)
