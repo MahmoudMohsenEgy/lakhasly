@@ -51,3 +51,11 @@ def test_manual_upload_409_when_disconnected(tmp_path):
     (d / "study.pdf").write_bytes(b"%PDF")
     library.write_meta(d, "M", "2026-06-06T10:00:00")
     assert client.post("/api/modules/m1/upload").status_code == 409
+
+def test_callback_completes_and_redirects_home(tmp_path):
+    up = _FakeUploader(connected=False)
+    client, _ = _client(tmp_path, up)
+    r = client.get("/api/drive/callback?code=xyz", follow_redirects=False)
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+    assert up.completed == {"code": "xyz"}
