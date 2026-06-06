@@ -1,3 +1,4 @@
+import pytest
 from explainer.uploaders.google_drive import GoogleDriveUploader
 from explainer.interfaces import CloudUploader
 
@@ -94,3 +95,10 @@ def test_upload_reuses_existing_folder(tmp_path):
     u.upload(str(pdf), "Week 2")
     assert "created_folder" not in store
     assert store["created_file"]["body"]["parents"] == ["existing"]
+
+def test_upload_without_token_raises(tmp_path):
+    u = _uploader(tmp_path,
+                  service_factory=lambda creds: None,
+                  creds_loader=lambda tp, sc: None)
+    with pytest.raises(RuntimeError):
+        u.upload("/tmp/x.pdf", "t")

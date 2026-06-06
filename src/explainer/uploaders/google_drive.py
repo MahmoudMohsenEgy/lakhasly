@@ -85,4 +85,5 @@ class GoogleDriveUploader:
         if creds and creds.expired and creds.refresh_token:
             from google.auth.transport.requests import Request
             creds.refresh(Request())
+            Path(token_path).write_text(creds.to_json(), encoding="utf-8")
         return creds
