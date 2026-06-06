@@ -14,3 +14,13 @@ def test_from_env(monkeypatch):
     assert cfg.font_family == "Cairo"
     assert cfg.search_backend == "tavily"
     assert cfg.step_budget == 40
+
+def test_drive_config(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "d")
+    monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRETS", "/tmp/secrets.json")
+    monkeypatch.setenv("GDRIVE_FOLDER_NAME", "My Folder")
+    cfg = Config.from_env()
+    assert cfg.google_oauth_client_secrets == "/tmp/secrets.json"
+    assert cfg.gdrive_folder_name == "My Folder"
+    assert cfg.gdrive_token_path == ""           # default empty (computed later)

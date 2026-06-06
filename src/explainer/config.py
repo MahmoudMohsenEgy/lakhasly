@@ -14,6 +14,9 @@ class Config:
     questions_per_section: int = 3  # soft per-section cap; the agent decides the actual count
     step_budget: int = 40
     search_backend: str = "tavily"  # "tavily" | "duckduckgo"
+    google_oauth_client_secrets: str = ""
+    gdrive_token_path: str = ""
+    gdrive_folder_name: str = "Study Lamp"
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -26,4 +29,7 @@ class Config:
             questions_per_section=int(os.getenv("QUESTIONS_PER_SECTION", "3")),
             step_budget=int(os.getenv("STEP_BUDGET", "40")),
             search_backend=os.getenv("SEARCH_BACKEND", "tavily"),
+            google_oauth_client_secrets=os.getenv("GOOGLE_OAUTH_CLIENT_SECRETS", ""),
+            gdrive_token_path=os.getenv("GDRIVE_TOKEN_PATH", ""),
+            gdrive_folder_name=os.getenv("GDRIVE_FOLDER_NAME", "Study Lamp"),
         )
