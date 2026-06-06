@@ -11,6 +11,7 @@ from pathlib import Path
 
 from explainer.config import Config
 from explainer.composition import build_agent
+from explainer.uploaders.null_uploader import NullUploader
 from explainer.web import library
 
 
@@ -25,17 +26,22 @@ class Job:
     detail: str = ""          # latest section title
     pdf_url: str = ""
     error: str = ""
+    drive_status: str = ""     # "" | uploading | uploaded | skipped | error
+    drive_link: str = ""
+    drive_error: str = ""
 
     def as_dict(self) -> dict:
         return asdict(self)
 
 
 class JobManager:
-    def __init__(self, base_config: Config, modules_dir: Path, agent_factory=build_agent):
+    def __init__(self, base_config: Config, modules_dir: Path,
+                 agent_factory=build_agent, uploader=None):
         self._base = base_config
         self._modules_dir = Path(modules_dir)
         self._modules_dir.mkdir(parents=True, exist_ok=True)
         self._agent_factory = agent_factory
+        self._uploader = uploader or NullUploader()
         self._jobs: dict[str, Job] = {}
         self._lock = threading.Lock()
 
@@ -73,7 +79,10 @@ class JobManager:
             agent = self._agent_factory(cfg, progress=progress)
             state = agent.run(str(module_dir / "source.txt"))
             if state.pdf_path and Path(state.pdf_path).exists():
-                library.write_meta(module_dir, name, datetime.datetime.now().isoformat(timespec="seconds"))
+                drive_link = self._maybe_upload(job, state.pdf_path, name)
+                library.write_meta(module_dir, name,
+                                   datetime.datetime.now().isoformat(timespec="seconds"),
+                                   drive_link=drive_link)
                 job.pdf_url = f"/api/modules/{module_id}/pdf"
                 job.status, job.stage = "done", "done"
             else:
@@ -82,3 +91,18 @@ class JobManager:
         except Exception as e:  # surface, never crash the server thread
             job.status, job.stage = "error", "error"
             job.error = f"{type(e).__name__}: {e}"
+
+    def _maybe_upload(self, job: Job, pdf_path: str, name: str) -> str:
+        if not self._uploader.is_connected():
+            job.drive_status = "skipped"
+            return ""
+        job.drive_status = "uploading"
+        try:
+            result = self._uploader.upload(pdf_path, name)
+            job.drive_link = result.get("link", "")
+            job.drive_status = "uploaded"
+            return job.drive_link
+        except Exception as e:
+            job.drive_status = "error"
+            job.drive_error = f"{type(e).__name__}: {e}"
+            return ""
