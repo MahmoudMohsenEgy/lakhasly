@@ -29,7 +29,7 @@ const STRINGS = {
     errNoContent: "Paste some content to explain first.",
     errNetwork: "Could not reach the server. Is it still running?",
     connectDrive: "Connect Google Drive",
-    driveConnected: "Saved to Drive",
+    driveConnected: "Drive connected",
     uploadingDrive: "Uploading to Drive…",
     savedToDrive: "Saved to Drive",
     openInDrive: "Open in Drive",
@@ -93,6 +93,7 @@ const el = {
   writeCount: $("#writeCount"),
   progressDetail: $("#progressDetail"),
   resultName: $("#resultName"),
+  resultDrive: $("#resultDrive"),
   resultPdf: $("#resultPdf"),
   downloadLink: $("#downloadLink"),
   resultNewBtn: $("#resultNewBtn"),
@@ -202,8 +203,48 @@ function openModule(m) {
   el.resultPdf.src = m.pdf_url;
   el.downloadLink.href = m.pdf_url;
   el.downloadLink.setAttribute("download", m.name + ".pdf");
+  renderDrive(m.drive_link ? "uploaded" : "", m.drive_link || "", m.id);
   showView("result");
   renderLibrary(lastModules); // update aria-current highlight
+}
+
+function renderDrive(state, link, moduleId) {
+  const box = el.resultDrive;
+  box.hidden = false;
+  box.innerHTML = "";
+  if (state === "uploading") {
+    box.textContent = t("uploadingDrive");
+  } else if (link) {
+    const label = document.createElement("span");
+    label.textContent = t("savedToDrive") + " · ";
+    const a = document.createElement("a");
+    a.href = link; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = t("openInDrive");
+    box.append(label, a);
+  } else if (driveConnected) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "btn btn--ghost";
+    btn.textContent = (state === "error")
+      ? t("uploadFailedDrive") + " · " + t("uploadToDrive") : t("uploadToDrive");
+    btn.addEventListener("click", () => manualUpload(moduleId, btn));
+    box.appendChild(btn);
+  } else {
+    box.hidden = true;
+  }
+}
+
+async function manualUpload(moduleId, btn) {
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/modules/${moduleId}/upload`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "failed");
+    renderDrive("uploaded", data.link, moduleId);
+    await loadLibrary();
+  } catch {
+    btn.disabled = false;
+    renderDrive("error", "", moduleId);
+  }
 }
 
 /* ---- Progress ---- */
@@ -237,7 +278,8 @@ function pollJob(jobId, name) {
     if (job.status === "done") {
       stopPolling();
       await loadLibrary();
-      openModule({ id: jobId, name, pdf_url: job.pdf_url });
+      openModule({ id: jobId, name, pdf_url: job.pdf_url, drive_link: job.drive_link || "" });
+      if (job.drive_status === "uploading") renderDrive("uploading", "", jobId);
     } else if (job.status === "error") {
       stopPolling();
       el.errorMessage.textContent = job.error || "";
