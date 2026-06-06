@@ -43,3 +43,18 @@ explain-web                 # serves http://127.0.0.1:8000
 - The frontend is plain HTML/CSS/JS in `src/explainer/web/static/`; the FastAPI app
   (`explainer.web.app`) is a thin entry point over the same `build_agent()` the CLI uses.
 - Per-module output lives under `output/web/<id>/`.
+
+## Google Drive upload (optional)
+
+When connected, every finished PDF is uploaded to a "Study Lamp" folder in your Google Drive.
+
+One-time setup:
+1. In Google Cloud Console, create a project and enable the **Google Drive API**.
+2. Create an **OAuth client ID** of type **Web application**. Add redirect URIs
+   `http://localhost:8000/api/drive/callback` and `http://127.0.0.1:8000/api/drive/callback`.
+3. Download the client secrets JSON and set `GOOGLE_OAUTH_CLIENT_SECRETS=/path/to/it` in `.env`.
+4. Start `explain-web`, click **Connect Google Drive**, and consent. The refresh token is
+   stored at `GDRIVE_TOKEN_PATH` (default `output/.gdrive_token.json`).
+
+The scope is `drive.file` (the app only sees files it creates). Uploads are non-fatal: if
+Drive fails or isn't connected, the PDF is still saved locally under `output/web/<id>/`.
