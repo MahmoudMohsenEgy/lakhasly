@@ -8,13 +8,17 @@ from explainer.interfaces import (
 
 def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRenderer,
                 charts: ChartRenderer, assets: AssetStore, builder: DocumentBuilder,
-                renderer: DocumentRenderer, config: Config):
+                renderer: DocumentRenderer, config: Config, progress=None):
+    # progress(stage: str, detail: dict) is optional; callers that don't pass it (CLI)
+    # get a no-op so the tools stay unchanged for them.
+    emit = progress or (lambda stage, detail=None: None)
 
     @tool
     def propose_outline(items: list[dict]) -> str:
         """Register the ordered section checklist. Each item: {id, title, brief}."""
         state.outline = [OutlineItem(id=i["id"], title=i["title"], brief=i.get("brief", ""))
                          for i in items]
+        emit("outlining", {"total": len(state.outline)})
         return f"Outline registered ({len(state.outline)}): " + ", ".join(o.id for o in state.outline)
 
     @tool
@@ -53,6 +57,8 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         state.sections = [s for s in state.sections if s.id != id]
         state.sections.append(Section(id=id, title=title, arabic_html=arabic_html,
                                       figures=figs, mcqs=questions))
+        done = len({s.id for s in state.sections} & {o.id for o in state.outline}) or len(state.sections)
+        emit("writing", {"done": done, "total": len(state.outline), "title": title})
         return f"Section '{id}' saved."
 
     @tool
@@ -75,6 +81,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
             return f"Cannot finalize. Unwritten sections: {', '.join(missing)}"
         order = {o.id: i for i, o in enumerate(state.outline)}
         state.sections.sort(key=lambda s: order.get(s.id, 999))
+        emit("rendering", {})
         state.assembled_html = builder.build(state, title)
         out = str(Path(config.output_dir) / "study.pdf")
         state.pdf_path = renderer.render(state.assembled_html, out)

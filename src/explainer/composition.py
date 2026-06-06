@@ -18,7 +18,8 @@ from explainer.render.builder import Jinja2HtmlBuilder
 from explainer.render.pdf import PlaywrightPdfRenderer
 from explainer.agent.langgraph_agent import LangGraphAgent
 
-def build_agent(config: Config, *, llm_provider: LLMProvider | None = None) -> ExplainerAgent:
+def build_agent(config: Config, *, llm_provider: LLMProvider | None = None,
+                progress=None) -> ExplainerAgent:
     assets = LocalAssetStore(str(Path(config.output_dir) / "assets"))
     registry = LoaderRegistry([UrlLoader(), PdfLoader(assets), SubtitleLoader(), TextLoader()])
     normalizer = BasicNormalizer()
@@ -30,4 +31,5 @@ def build_agent(config: Config, *, llm_provider: LLMProvider | None = None) -> E
     return LangGraphAgent(
         registry=registry, normalizer=normalizer, llm_provider=llm, search=search,
         diagrams=PlaywrightMermaidRenderer(), charts=MatplotlibChartRenderer(),
-        builder=builder, renderer=PlaywrightPdfRenderer(), assets=assets, config=config)
+        builder=builder, renderer=PlaywrightPdfRenderer(), assets=assets, config=config,
+        progress=progress)

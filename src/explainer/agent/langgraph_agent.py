@@ -26,7 +26,7 @@ class LangGraphAgent:
     def __init__(self, *, registry, normalizer: TextNormalizer, llm_provider: LLMProvider,
                  search: SearchClient, diagrams: DiagramRenderer, charts: ChartRenderer,
                  builder: DocumentBuilder, renderer: DocumentRenderer, assets: AssetStore,
-                 config: Config):
+                 config: Config, progress=None):
         self._registry = registry
         self._normalizer = normalizer
         self._llm = llm_provider
@@ -37,6 +37,8 @@ class LangGraphAgent:
         self._renderer = renderer
         self._assets = assets
         self._config = config
+        # optional progress(stage, detail) callback; no-op when not supplied (e.g. CLI)
+        self._progress = progress or (lambda stage, detail=None: None)
 
     def _user_message(self, state: StudyState) -> str:
         imgs = "\n".join(f"- {im.id}: {im.path}" for im in state.images) or "(none)"
@@ -47,13 +49,14 @@ class LangGraphAgent:
                 f"{self._config.questions_per_section} per section). Do not skip the quiz.")
 
     def run(self, source_ref: str, source_type: str = "auto") -> StudyState:
+        self._progress("loading", {})
         loaded = self._registry.load(source_ref, source_type)
         state = StudyState(source_ref=source_ref, source_type=source_type,
                            raw_text=loaded.text, images=loaded.images)
         state.normalized_text = self._normalizer.normalize(loaded.text)
         tools = build_tools(state, search=self._search, diagrams=self._diagrams,
                             charts=self._charts, assets=self._assets, builder=self._builder,
-                            renderer=self._renderer, config=self._config)
+                            renderer=self._renderer, config=self._config, progress=self._progress)
         try:
             agent = create_react_agent(self._llm.chat_model(), tools)
             agent.invoke(
@@ -68,4 +71,7 @@ class LangGraphAgent:
                 pass
         if not state.pdf_path:
             state.errors.append("Agent finished without producing a PDF (budget hit or no finalize).")
+            self._progress("error", {"message": state.errors[-1]})
+        else:
+            self._progress("done", {"pdf": state.pdf_path})
         return state
