@@ -121,3 +121,31 @@ def test_write_section_breaks_the_always_B_bias(tmp_path):
     for m in stored:
         assert m.options[m.answer_index] == "RIGHT"   # correctness preserved
     assert len({m.answer_index for m in stored}) > 1  # no longer all B
+
+
+def test_render_table_writes_fragment_and_returns_path(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_table"].invoke({"spec": {
+        "caption": "مقارنة [[TCP]]",
+        "headers": ["الخاصية", "TCP"],
+        "rows": [["الاتصال", "موثوق"]]}})
+    assert "saved at" in msg
+    path = msg.split("saved at", 1)[1].strip()
+    assert path.endswith(".html")
+    html = Path(path).read_text(encoding="utf-8")
+    assert '<table dir="rtl">' in html
+    assert '<span dir="ltr" class="term">TCP</span>' in html
+
+def test_render_table_rejects_ragged_rows(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_table"].invoke({"spec": {
+        "headers": ["a", "b"], "rows": [["only-one"]]}})
+    assert "error" in msg.lower()
+
+def test_render_table_rejects_empty_headers(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_table"].invoke({"spec": {"headers": [], "rows": [[]]}})
+    assert "error" in msg.lower()

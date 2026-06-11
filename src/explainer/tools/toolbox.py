@@ -6,6 +6,7 @@ from explainer.config import Config
 from explainer.interfaces import (
     SearchClient, DiagramRenderer, ChartRenderer, AssetStore,
     DocumentBuilder, DocumentRenderer, TermFormatter)
+from explainer.render.fragments import build_table_html, build_timeline_html
 
 
 def shuffle_options(options: list, answer_index: int, seed: str):
@@ -65,6 +66,25 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
             return f"Chart error (fix spec and retry): {e}"
 
     @tool
+    def render_table(spec: dict) -> str:
+        """Render a comparison table as native RTL HTML.
+        spec={caption?:str, headers:[str,...], rows:[[str,...],...]}; every row must match headers length."""
+        headers = spec.get("headers")
+        rows = spec.get("rows")
+        if not isinstance(headers, list) or not headers:
+            return "Table error (fix spec and retry): 'headers' must be a non-empty list."
+        if not isinstance(rows, list) or not rows:
+            return "Table error (fix spec and retry): 'rows' must be a non-empty list."
+        for i, row in enumerate(rows):
+            if not isinstance(row, list) or len(row) != len(headers):
+                return (f"Table error (fix spec and retry): row {i} has {len(row) if isinstance(row, list) else 'non-list'} "
+                        f"cells but there are {len(headers)} headers.")
+        html = build_table_html(spec, term_formatter)
+        path = assets.allocate(".html")
+        assets.write_text(path, html)
+        return f"Table saved at {path}"
+
+    @tool
     def write_section(id: str, title: str, arabic_html: str,
                       figures: list[dict], mcqs: list[dict]) -> str:
         """Save a completed section. figures=[{kind,path,caption}]; mcqs=[{question,options,answer_index,explanation}]."""
@@ -108,4 +128,4 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         return f"PDF created at {state.pdf_path}"
 
     return [propose_outline, review_progress, render_mermaid, make_chart,
-            write_section, web_search, finalize]
+            render_table, write_section, web_search, finalize]
