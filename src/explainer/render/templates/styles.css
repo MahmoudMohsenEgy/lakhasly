@@ -25,3 +25,17 @@ figcaption { font-size: 0.9rem; color: #555; }
 .mcq { background: #f4f7fb; border: 1px solid #e3e9f2; border-radius: 8px; padding: 0.8rem 1rem; margin: 0.8rem 0; break-inside: avoid; page-break-inside: avoid; }
 .quiz, .answer-key { page-break-before: always; }
 .answer-key p { margin-bottom: 0.6rem; }
+.table-figure { margin: 1.2rem auto; break-inside: avoid; page-break-inside: avoid; }
+.table-figure table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.table-figure th, .table-figure td { border: 1px solid #d6deea; padding: 0.45rem 0.6rem; text-align: right; vertical-align: top; }
+.table-figure thead th { background: #eef3fa; font-weight: 700; }
+.table-figure tbody tr:nth-child(even) { background: #f7f9fc; }
+
+.timeline-figure { margin: 1.2rem auto; break-inside: avoid; page-break-inside: avoid; }
+.timeline-title { font-weight: 700; margin-bottom: 0.6rem; }
+ol.timeline { list-style: none; margin: 0; padding: 0 1rem 0 0; border-right: 2px solid #cdd8e8; }
+ol.timeline li { position: relative; padding: 0 1rem 1rem 0; break-inside: avoid; page-break-inside: avoid; }
+ol.timeline li::before { content: ""; position: absolute; right: -1.45rem; top: 0.25rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #4a6fa5; }
+.tl-label { display: inline-block; font-weight: 700; margin-left: 0.5rem; }
+.tl-text { font-weight: 600; }
+.tl-detail { display: block; color: #555; font-size: 0.9rem; margin-top: 0.2rem; }
