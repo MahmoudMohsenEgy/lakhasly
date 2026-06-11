@@ -1,0 +1,23 @@
+services:
+  studylamp:
+    build: .
+    image: studylamp:latest
+    container_name: studylamp
+    restart: unless-stopped
+    env_file: .env
+    # Publish ONLY to the host's loopback. The Cloudflare Tunnel (cloudflared,
+    # running on the host) forwards to http://localhost:8000 — nothing is exposed
+    # to the public internet directly. Drop the "127.0.0.1:" prefix only if you
+    # deliberately want the port reachable on the server's LAN/IP.
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Persist generated modules across rebuilds.
+      - ./output:/app/output
+      # Optional — only if you use Google Drive upload. Mount the OAuth client
+      # secrets (read-only) and a writable token file, and point the matching env
+      # vars at these paths in your .env:
+      #   GOOGLE_OAUTH_CLIENT_SECRETS=/app/secrets/client_secrets.json
+      #   GDRIVE_TOKEN_PATH=/app/secrets/gdrive_token.json
+      # - ./secrets/client_secrets.json:/app/secrets/client_secrets.json:ro
+      # - ./secrets/gdrive_token.json:/app/secrets/gdrive_token.json

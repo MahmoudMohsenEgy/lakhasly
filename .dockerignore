@@ -1,0 +1,14 @@
+# Keep the build context small and never bake secrets or local state into the image.
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+output/
+tests/
+docs/
+.superpowers/
+.env
+*.md
+!README.md
