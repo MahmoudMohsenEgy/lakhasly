@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,16 +13,14 @@
   <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
 
   <header class="topbar">
-    <div class="brand">
+    <button type="button" class="brand" id="brandHome" aria-label="Study Lamp — home">
       <span class="brand__lamp" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 3h7l3 8H5z"></path>
-          <path d="M11.5 11v7"></path>
-          <path d="M8 21h7"></path>
+          <path d="M8 3h7l3 8H5z"></path><path d="M11.5 11v7"></path><path d="M8 21h7"></path>
         </svg>
       </span>
       <span class="brand__name" data-i18n="appName">Study Lamp</span>
-    </div>
+    </button>
     <div class="topbar__controls">
       <a class="drive-btn" id="driveBtn" hidden href="/api/drive/connect">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l5 9-4 7H7l-4-7z"></path><path d="M3.5 12h17"></path></svg>
@@ -38,80 +36,89 @@
     </div>
   </header>
 
-  <div class="layout">
-    <aside class="library" aria-label="Your study modules">
-      <button type="button" class="btn btn--ghost library__new" id="newBtn" data-i18n="newModule">New module</button>
-      <h2 class="library__title" data-i18n="yourModules">Your modules</h2>
-      <ul class="library__list" id="libraryList"></ul>
-      <p class="library__empty" id="libraryEmpty" data-i18n="libraryEmpty">Modules you make will show up here.</p>
-    </aside>
+  <main class="main" id="main" tabindex="-1">
+    <!-- GALLERY (home) -->
+    <section class="view view--gallery" id="viewGallery">
+      <div class="gallery__head">
+        <h1 class="gallery__title" data-i18n="yourModules">Your modules</h1>
+        <button type="button" class="btn btn--primary btn--lamp" id="newBtn" data-i18n="newModule">New module</button>
+      </div>
+      <ul class="gallery__grid" id="galleryGrid"></ul>
+      <p class="gallery__empty" id="galleryEmpty" hidden data-i18n="galleryEmpty">No modules yet. Make your first one.</p>
+    </section>
 
-    <main class="main" id="main" tabindex="-1">
-      <!-- COMPOSE -->
-      <section class="view view--compose" id="viewCompose">
-        <div class="compose">
-          <h1 class="compose__title" data-i18n="composeTitle">Turn a lesson into Egyptian-Arabic study notes</h1>
-          <p class="compose__sub" data-i18n="composeSub">Paste a course transcript or an article. You get a clear Egyptian-Arabic PDF with diagrams and a review quiz.</p>
-          <form class="compose__form" id="composeForm" novalidate>
-            <div class="field">
-              <label class="field__label" for="nameInput" data-i18n="moduleNameLabel">Module name</label>
-              <input class="input" id="nameInput" type="text" autocomplete="off"
-                     data-i18n-ph="moduleNamePh" placeholder="e.g. Gradient Descent — Week 2">
-            </div>
-            <div class="field">
-              <label class="field__label" for="textInput" data-i18n="contentLabel">Paste your content</label>
-              <textarea class="textarea" id="textInput" rows="14"
-                        data-i18n-ph="contentPh" placeholder="Paste the full transcript or article text here."></textarea>
-            </div>
-            <p class="error" id="composeError" role="alert" hidden></p>
-            <div class="compose__actions">
-              <button type="submit" class="btn btn--primary btn--lamp" id="generateBtn" data-i18n="generate">Generate study PDF</button>
-              <span class="compose__hint" data-i18n="generateHint">This takes a minute or two. The PDF is always in Egyptian Arabic.</span>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- PROGRESS -->
-      <section class="view view--progress" id="viewProgress" hidden>
-        <div class="progress">
-          <span class="progress__lamp" aria-hidden="true"></span>
-          <h2 class="progress__title" data-i18n="progressTitle">Building your study PDF</h2>
-          <p class="progress__module" id="progressModule"></p>
-          <ol class="steps" id="steps">
-            <li class="step" data-stage="loading"><span class="step__dot"></span><span class="step__label" data-i18n="stepLoading">Reading the content</span></li>
-            <li class="step" data-stage="outlining"><span class="step__dot"></span><span class="step__label" data-i18n="stepOutlining">Planning the sections</span></li>
-            <li class="step" data-stage="writing"><span class="step__dot"></span><span class="step__label" data-i18n="stepWriting">Writing in Egyptian Arabic</span><span class="step__count" id="writeCount"></span></li>
-            <li class="step" data-stage="rendering"><span class="step__dot"></span><span class="step__label" data-i18n="stepRendering">Rendering the PDF</span></li>
-          </ol>
-          <p class="progress__detail" id="progressDetail" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <!-- RESULT -->
-      <section class="view view--result" id="viewResult" hidden>
-        <div class="result__bar">
-          <h2 class="result__name" id="resultName"></h2>
-          <p class="result__drive" id="resultDrive" hidden></p>
-          <div class="result__actions">
-            <a class="btn btn--ghost" id="downloadLink" download data-i18n="download">Download</a>
-            <button type="button" class="btn btn--primary" id="resultNewBtn" data-i18n="newModule">New module</button>
+    <!-- COMPOSE (full screen) -->
+    <section class="view view--compose" id="viewCompose" hidden>
+      <button type="button" class="backlink" id="composeBack">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+        <span data-i18n="backToModules">Modules</span>
+      </button>
+      <div class="compose">
+        <h1 class="compose__title" data-i18n="composeTitle">Turn a lesson into Egyptian-Arabic study notes</h1>
+        <p class="compose__sub" data-i18n="composeSub">Paste a course transcript or an article. You get a clear Egyptian-Arabic PDF with diagrams and a review quiz.</p>
+        <form class="compose__form" id="composeForm" novalidate>
+          <div class="field">
+            <label class="field__label" for="nameInput" data-i18n="moduleNameLabel">Module name</label>
+            <input class="input" id="nameInput" type="text" autocomplete="off"
+                   data-i18n-ph="moduleNamePh" placeholder="e.g. Gradient Descent — Week 2">
           </div>
-        </div>
-        <iframe class="result__pdf" id="resultPdf" title="Study PDF"></iframe>
-      </section>
+          <div class="field">
+            <label class="field__label" for="textInput" data-i18n="contentLabel">Paste your content</label>
+            <textarea class="textarea" id="textInput" rows="14"
+                      data-i18n-ph="contentPh" placeholder="Paste the full transcript or article text here."></textarea>
+          </div>
+          <p class="error" id="composeError" role="alert" hidden></p>
+          <div class="compose__actions">
+            <button type="submit" class="btn btn--primary btn--lamp" id="generateBtn" data-i18n="generate">Generate study PDF</button>
+            <span class="compose__hint" data-i18n="generateHint">This takes a minute or two. The PDF is always in Egyptian Arabic.</span>
+          </div>
+        </form>
+      </div>
+    </section>
 
-      <!-- ERROR -->
-      <section class="view view--error" id="viewError" hidden>
-        <div class="errorbox">
-          <h2 class="errorbox__title" data-i18n="errorTitle">That didn't work</h2>
-          <p class="errorbox__msg" id="errorMessage"></p>
-          <button type="button" class="btn btn--primary" id="errorRetry" data-i18n="tryAgain">Try again</button>
-        </div>
-      </section>
-    </main>
-  </div>
+    <!-- PROGRESS -->
+    <section class="view view--progress" id="viewProgress" hidden>
+      <div class="progress">
+        <span class="progress__lamp" aria-hidden="true"></span>
+        <h2 class="progress__title" data-i18n="progressTitle">Building your study PDF</h2>
+        <p class="progress__module" id="progressModule"></p>
+        <ol class="steps" id="steps">
+          <li class="step" data-stage="loading"><span class="step__dot"></span><span class="step__label" data-i18n="stepLoading">Reading the content</span></li>
+          <li class="step" data-stage="outlining"><span class="step__dot"></span><span class="step__label" data-i18n="stepOutlining">Planning the sections</span></li>
+          <li class="step" data-stage="writing"><span class="step__dot"></span><span class="step__label" data-i18n="stepWriting">Writing in Egyptian Arabic</span><span class="step__count" id="writeCount"></span></li>
+          <li class="step" data-stage="rendering"><span class="step__dot"></span><span class="step__label" data-i18n="stepRendering">Rendering the PDF</span></li>
+        </ol>
+        <p class="progress__detail" id="progressDetail" aria-live="polite"></p>
+      </div>
+    </section>
 
-  <script src="/static/app.js"></script>
+    <!-- RESULT -->
+    <section class="view view--result" id="viewResult" hidden>
+      <button type="button" class="backlink" id="resultBack">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+        <span data-i18n="backToModules">Modules</span>
+      </button>
+      <div class="result__bar">
+        <h2 class="result__name" id="resultName"></h2>
+        <p class="result__drive" id="resultDrive" hidden></p>
+        <div class="result__actions">
+          <a class="btn btn--ghost" id="downloadLink" download data-i18n="download">Download</a>
+          <button type="button" class="btn btn--primary" id="resultNewBtn" data-i18n="newModule">New module</button>
+        </div>
+      </div>
+      <iframe class="result__pdf" id="resultPdf" title="Study PDF"></iframe>
+    </section>
+
+    <!-- ERROR -->
+    <section class="view view--error" id="viewError" hidden>
+      <div class="errorbox">
+        <h2 class="errorbox__title" data-i18n="errorTitle">That didn't work</h2>
+        <p class="errorbox__msg" id="errorMessage"></p>
+        <button type="button" class="btn btn--primary" id="errorRetry" data-i18n="tryAgain">Try again</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>

@@ -134,3 +134,18 @@ def test_pdf_route_rejects_path_traversal(tmp_path):
     # is_safe_id blocks ids with separators/dots before any filesystem access
     r = _client(tmp_path).get("/api/modules/..%2f..%2fetc/pdf")
     assert r.status_code in (404, 400)
+
+
+def test_index_has_gallery_and_module_script(tmp_path):
+    html = _client(tmp_path).get("/").text
+    assert 'id="galleryGrid"' in html
+    assert 'id="viewCompose"' in html
+    assert '<script type="module" src="/static/js/app.js">' in html
+    assert 'data-theme="light"' in html
+
+
+def test_static_js_modules_are_served(tmp_path):
+    client = _client(tmp_path)
+    for mod in ("app.js", "i18n.js", "api.js", "views.js",
+                "gallery.js", "compose.js", "progress.js", "result.js"):
+        assert client.get(f"/static/js/{mod}").status_code == 200, mod
