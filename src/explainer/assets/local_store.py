@@ -12,3 +12,6 @@ class LocalAssetStore:
 
     def read_bytes(self, path: str) -> bytes:
         return Path(path).read_bytes()
+
+    def write_text(self, path: str, text: str) -> None:
+        Path(path).write_text(text, encoding="utf-8")

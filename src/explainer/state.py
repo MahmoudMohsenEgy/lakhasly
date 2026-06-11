@@ -20,7 +20,7 @@ class OutlineItem:
 
 @dataclass
 class Figure:
-    kind: Literal["image", "mermaid", "chart"]
+    kind: Literal["image", "mermaid", "chart", "table", "timeline"]
     path: str
     caption: str = ""
 
