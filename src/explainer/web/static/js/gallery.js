@@ -4,7 +4,7 @@
 "use strict";
 
 import { el } from "./views.js";
-import { t, formatDate } from "./i18n.js";
+import { formatDate } from "./i18n.js";
 import { openModule } from "./result.js";
 
 let lastModules = [];
@@ -31,7 +31,7 @@ function card(m) {
   btn.querySelector(".card__date").textContent = formatDate(m.created_at);
   const thumb = btn.querySelector(".card__thumb");
   const img = btn.querySelector(".card__img");
-  img.alt = m.name;
+  // decorative: the card__name span already labels the button for AT
   img.addEventListener("error", () => { thumb.dataset.fallback = "true"; });
   img.src = m.thumb_url;
   btn.addEventListener("click", () => openModule(m));
