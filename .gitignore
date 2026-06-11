@@ -11,3 +11,6 @@ tests/fixtures/sample.pdf
 # Google OAuth secrets / tokens (never commit)
 client_secret*.json
 *gdrive_token*.json
+
+# Visual brainstorming companion (local mockups)
+.superpowers/
