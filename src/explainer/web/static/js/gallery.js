@@ -5,6 +5,7 @@
 
 import { el } from "./views.js";
 import { formatDate } from "./i18n.js";
+import { getModules } from "./api.js";
 import { openModule } from "./result.js";
 
 let lastModules = [];
@@ -48,8 +49,7 @@ export function renderGallery(modules) {
 
 export async function loadGallery() {
   try {
-    const res = await fetch("/api/modules");
-    if (res.ok) renderGallery(await res.json());
+    renderGallery(await getModules());
   } catch { /* offline: keep what we have */ }
 }
 
