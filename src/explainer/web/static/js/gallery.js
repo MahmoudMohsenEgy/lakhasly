@@ -4,7 +4,7 @@
 "use strict";
 
 import { el } from "./views.js";
-import { formatDate } from "./i18n.js";
+import { t, formatDate } from "./i18n.js";
 import { getModules } from "./api.js";
 import { openModule } from "./result.js";
 
@@ -40,11 +40,25 @@ function card(m) {
   return li;
 }
 
+// Dashed "+" tile: alternate entry to compose at the end of the shelf.
+function addTile() {
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "card card--add";
+  btn.setAttribute("aria-label", t("newModule"));
+  btn.innerHTML = '<span aria-hidden="true">+</span>';
+  btn.addEventListener("click", () => el.newBtn.click());
+  li.appendChild(btn);
+  return li;
+}
+
 export function renderGallery(modules) {
   lastModules = modules || [];
   el.galleryGrid.innerHTML = "";
   el.galleryEmpty.hidden = lastModules.length > 0;
   for (const m of lastModules) el.galleryGrid.appendChild(card(m));
+  if (lastModules.length > 0) el.galleryGrid.appendChild(addTile());
 }
 
 export async function loadGallery() {

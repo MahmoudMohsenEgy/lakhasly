@@ -175,6 +175,14 @@ button { font: inherit; cursor: pointer; }
 .card__meta { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3) var(--s-4) var(--s-4); }
 .card__name { font-weight: 600; font-size: 0.98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card__date { font-size: 0.8rem; color: var(--muted); }
+.card--add {
+  align-items: center; justify-content: center;
+  block-size: 100%; min-block-size: 12rem;
+  border-style: dashed; box-shadow: none;
+  background: transparent; color: var(--faint);
+  font-size: 2.2rem; font-weight: 300; line-height: 1;
+}
+.card--add:hover { color: var(--lamp); border-color: var(--lamp); box-shadow: none; }
 
 /* ---- Back link ---- */
 .backlink {

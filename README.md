@@ -37,7 +37,9 @@ explain-web                 # serves http://127.0.0.1:8000
 ```
 
 - English-first interface (LTR) with a one-click switch to Egyptian Arabic (RTL);
-  the generated PDF is always Egyptian Arabic. Dark-first with a light toggle.
+  the generated PDF is always Egyptian Arabic. Light-first with a dark toggle.
+- The home screen is a gallery of your modules with first-page PDF thumbnails;
+  "New module" opens a full-screen compose page.
 - Generation runs as a background job with truthful staged progress
   (reading → outlining → writing → rendering).
 - The frontend is plain HTML/CSS/JS in `src/explainer/web/static/`; the FastAPI app
