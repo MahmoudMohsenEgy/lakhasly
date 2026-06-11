@@ -1,6 +1,29 @@
 <!doctype html>
 <html dir="rtl" lang="ar">
-<head><meta charset="utf-8"><style>{{ css | safe }}</style></head>
+<head>
+<meta charset="utf-8">
+<script>window.__mathReady = false;</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    try {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\[", right: "\\]", display: true},
+          {left: "\\(", right: "\\)", display: false},
+          {left: "$", right: "$", display: false}
+        ],
+        throwOnError: false
+      });
+    } catch (e) { /* KaTeX unavailable (e.g. offline): fall back to raw text */ }
+    window.__mathReady = true;
+  });
+</script>
+<style>{{ css | safe }}</style>
+</head>
 <body>
 <h1>{{ title | safe }}</h1>
 {% for sec in sections %}

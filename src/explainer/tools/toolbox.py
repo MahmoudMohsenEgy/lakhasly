@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 from langchain_core.tools import tool
 from explainer.state import StudyState, OutlineItem, Section, Figure, MCQ
@@ -5,6 +6,21 @@ from explainer.config import Config
 from explainer.interfaces import (
     SearchClient, DiagramRenderer, ChartRenderer, AssetStore,
     DocumentBuilder, DocumentRenderer)
+
+
+def shuffle_options(options: list, answer_index: int, seed: str):
+    """Reorder an MCQ's options so the correct answer isn't always in the same slot.
+
+    LLMs have a strong position bias (they overwhelmingly park the right answer at
+    index 1 / "B"). We re-permute on our side and follow the correct option to its
+    new index. Seeded by the question text so a given question is stable across runs
+    while answers still spread across A–D over a quiz.
+    """
+    order = list(range(len(options)))
+    random.Random(seed).shuffle(order)
+    new_options = [options[i] for i in order]
+    new_answer = order.index(answer_index)
+    return new_options, new_answer
 
 def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRenderer,
                 charts: ChartRenderer, assets: AssetStore, builder: DocumentBuilder,
@@ -52,8 +68,11 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
                       figures: list[dict], mcqs: list[dict]) -> str:
         """Save a completed section. figures=[{kind,path,caption}]; mcqs=[{question,options,answer_index,explanation}]."""
         figs = [Figure(kind=f["kind"], path=f["path"], caption=f.get("caption", "")) for f in figures]
-        questions = [MCQ(question=m["question"], options=m["options"],
-                         answer_index=m["answer_index"], explanation=m["explanation"]) for m in mcqs]
+        questions = []
+        for m in mcqs:
+            opts, ans = shuffle_options(m["options"], m["answer_index"], m["question"])
+            questions.append(MCQ(question=m["question"], options=opts,
+                                 answer_index=ans, explanation=m["explanation"]))
         state.sections = [s for s in state.sections if s.id != id]
         state.sections.append(Section(id=id, title=title, arabic_html=arabic_html,
                                       figures=figs, mcqs=questions))

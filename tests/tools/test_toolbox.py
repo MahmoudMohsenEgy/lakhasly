@@ -2,7 +2,7 @@ from pathlib import Path
 from explainer.state import StudyState
 from explainer.config import Config
 from explainer.interfaces import SearchResult
-from explainer.tools.toolbox import build_tools
+from explainer.tools.toolbox import build_tools, shuffle_options
 
 class FakeSearch:
     def search(self, query, k=5): return [SearchResult("T", "U", "S")]
@@ -91,3 +91,29 @@ def test_finalize_refuses_without_outline(tmp_path):
     t = _tools(state, tmp_path)
     msg = t["finalize"].invoke({"title": "T"})
     assert "propose_outline" in msg and state.pdf_path == ""
+
+def test_shuffle_preserves_the_correct_option():
+    opts = ["alpha", "beta", "gamma", "delta"]
+    for seed in ["q1", "q2", "q3", "what is x?", "a different question"]:
+        new_opts, new_idx = shuffle_options(opts, 1, seed)
+        assert sorted(new_opts) == sorted(opts)       # same options, just reordered
+        assert new_opts[new_idx] == opts[1]           # answer still points at "beta"
+
+def test_shuffle_is_deterministic_per_seed():
+    opts = ["a", "b", "c", "d"]
+    assert shuffle_options(opts, 2, "same") == shuffle_options(opts, 2, "same")
+
+def test_write_section_breaks_the_always_B_bias(tmp_path):
+    # The model parks every correct answer at index 1 (B). After write_section the
+    # stored answers must spread across letters while still pointing at the right text.
+    state = StudyState(source_ref="x")
+    t = _tools(state, tmp_path)
+    mcqs = [{"question": f"Question number {i} about the topic?",
+             "options": ["wrong-1", "RIGHT", "wrong-2", "wrong-3"],
+             "answer_index": 1, "explanation": "because"} for i in range(12)]
+    t["write_section"].invoke({"id": "s1", "title": "t", "arabic_html": "<p>a</p>",
+                               "figures": [], "mcqs": mcqs})
+    stored = state.sections[0].mcqs
+    for m in stored:
+        assert m.options[m.answer_index] == "RIGHT"   # correctness preserved
+    assert len({m.answer_index for m in stored}) > 1  # no longer all B

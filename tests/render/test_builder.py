@@ -56,3 +56,16 @@ def test_no_quiz_section_when_no_mcqs(tmp_path):
     state.sections.append(Section(id="s1", title="بدون أسئلة", arabic_html="<p>a</p>"))
     html = _builder(tmp_path).build(state, title="t")
     assert "أسئلة المراجعة" not in html and "مفتاح الإجابات" not in html
+
+def test_equations_are_typeset_client_side(tmp_path):
+    # Equations must be wired for KaTeX and their LaTeX source preserved verbatim
+    # (KaTeX typesets it in the browser before the PDF is printed).
+    state = StudyState(source_ref="x")
+    state.sections.append(Section(id="s1", title="t",
+        arabic_html=r"<p>المعادلة $E=mc^2$ وكمان $$a^2+b^2=c^2$$</p>"))
+    html = _builder(tmp_path).build(state, title="t")
+    assert "katex" in html.lower()                 # KaTeX assets pulled in
+    assert "renderMathInElement" in html           # auto-render invoked
+    assert "__mathReady" in html                   # readiness flag for the PDF renderer
+    assert "$E=mc^2$" in html                       # inline LaTeX preserved, not escaped
+    assert "$$a^2+b^2=c^2$$" in html               # display LaTeX preserved

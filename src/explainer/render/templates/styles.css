@@ -1,7 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
 html { direction: rtl; }
-body { font-family: 'Cairo', sans-serif; line-height: 1.9; margin: 2.5rem; color: #1a1a1a; }
+/* No body margin: the PDF renderer already applies page margins; doubling them
+   wasted space and inflated the page count. */
+body { font-family: 'Cairo', sans-serif; line-height: 1.6; margin: 0; color: #1a1a1a; }
 h1, h2 { color: #0b3d91; }
+/* KaTeX math is left-to-right even inside the RTL document. */
+.katex, .katex-display { direction: ltr; }
+.katex-display { text-align: center; }
 .term {
   unicode-bidi: isolate;
   font-family: 'Courier New', monospace;

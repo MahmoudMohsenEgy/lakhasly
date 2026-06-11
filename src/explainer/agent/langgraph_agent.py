@@ -13,6 +13,7 @@ Goal: produce a COMPLETE Egyptian-Arabic study document from the source text, th
 Rules:
 - Write in Egyptian Arabic (عامية مصرية), clear and friendly.
 - Keep technical terms and code in English, and mark EACH one as [[term]] so it renders left-to-right.
+- If the source has equations or math, REPRODUCE them as LaTeX wrapped in $...$ (inline) or $$...$$ (display) — they get typeset as real math, so never paraphrase an equation into words only. After each equation, explain in Egyptian Arabic what it means and what every symbol/variable stands for. Do NOT drop equations.
 - First call propose_outline to split the content into ordered sections covering EVERY topic. Group related ideas into a reasonable number of sections; do NOT over-split short content into many tiny sections.
 - Then write EVERY section with write_section: an Arabic explanation (HTML), optional figures, and review MCQs attached to that section.
 - Build ONE review quiz for the whole document: decide a sensible TOTAL number of MCQs — about 6 to 10 for a short source, more for a longer one — covering the most important ideas. Don't quiz every minor point, but DO NOT skip the quiz: there must always be a review quiz. Attach MCQs to your CONTENT sections via write_section; do NOT create a separate section just for the quiz — the document automatically renders one review-quiz section (with an answer key) at the end. Avoid redundant questions across sections.
