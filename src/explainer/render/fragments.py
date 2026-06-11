@@ -25,3 +25,30 @@ def build_table_html(spec: dict, formatter: TermFormatter) -> str:
         f"{figcaption}"
         "</figure>"
     )
+
+
+def build_timeline_html(spec: dict, formatter: TermFormatter) -> str:
+    """Build a vertical RTL timeline fragment from a validated spec.
+
+    spec = {"title"?: str, "events": list[{"label": str, "text": str, "detail"?: str}]}
+    """
+    fmt = formatter.format
+    items = []
+    for ev in spec["events"]:
+        detail = ev.get("detail")
+        detail_html = f'<span class="tl-detail">{fmt(detail)}</span>' if detail else ""
+        items.append(
+            "<li>"
+            f'<span class="tl-label">{fmt(ev["label"])}</span>'
+            f'<span class="tl-text">{fmt(ev["text"])}</span>'
+            f"{detail_html}"
+            "</li>"
+        )
+    title = spec.get("title")
+    title_html = f'<div class="timeline-title">{fmt(title)}</div>' if title else ""
+    return (
+        '<figure class="timeline-figure">'
+        f"{title_html}"
+        f'<ol class="timeline">{"".join(items)}</ol>'
+        "</figure>"
+    )

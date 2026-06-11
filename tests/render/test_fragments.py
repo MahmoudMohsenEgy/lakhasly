@@ -25,3 +25,24 @@ def test_table_without_caption_emits_no_figcaption():
     spec = {"headers": ["A"], "rows": [["x"]]}
     html = build_table_html(spec, FMT)
     assert "<figcaption" not in html
+
+from explainer.render.fragments import build_timeline_html
+
+def test_timeline_renders_ordered_events():
+    spec = {"title": "تطور [[HTTP]]",
+            "events": [{"label": "1991", "text": "[[HTTP]] 0.9"},
+                       {"label": "1996", "text": "[[HTTP]] 1.0", "detail": "أول نسخة رسمية"}]}
+    html = build_timeline_html(spec, FMT)
+    assert 'class="timeline"' in html
+    assert html.count("<li>") == 2
+    assert '<span class="tl-label">1991</span>' in html
+    assert '<span class="tl-detail">أول نسخة رسمية</span>' in html
+    # term formatting applied inside events
+    assert '<span dir="ltr" class="term">HTTP</span>' in html
+    assert "[[HTTP]]" not in html
+
+def test_timeline_omits_optional_title_and_detail():
+    spec = {"events": [{"label": "1", "text": "خطوة"}]}
+    html = build_timeline_html(spec, FMT)
+    assert "timeline-title" not in html
+    assert "tl-detail" not in html
