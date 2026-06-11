@@ -69,3 +69,28 @@ def test_equations_are_typeset_client_side(tmp_path):
     assert "__mathReady" in html                   # readiness flag for the PDF renderer
     assert "$E=mc^2$" in html                       # inline LaTeX preserved, not escaped
     assert "$$a^2+b^2=c^2$$" in html               # display LaTeX preserved
+
+def test_table_figure_is_inlined_not_imaged(tmp_path):
+    frag = tmp_path / "t1.html"
+    frag.write_text('<figure class="table-figure"><table dir="rtl">'
+                    '<thead><tr><th>A</th></tr></thead><tbody><tr><td>x</td></tr></tbody>'
+                    '</table></figure>', encoding="utf-8")
+    sec = Section(id="s1", title="عنوان", arabic_html="<p>نص</p>")
+    sec.figures.append(Figure(kind="table", path=str(frag), caption=""))
+    state = StudyState(source_ref="x")
+    state.sections.append(sec)
+    html = _builder(tmp_path).build(state, title="عنوان")
+    assert '<table dir="rtl">' in html          # fragment was inlined
+    assert "data:image" not in html              # NOT base64-embedded as an <img>
+
+def test_timeline_figure_is_inlined(tmp_path):
+    frag = tmp_path / "tl1.html"
+    frag.write_text('<figure class="timeline-figure"><ol class="timeline">'
+                    '<li><span class="tl-label">1991</span><span class="tl-text">x</span></li>'
+                    '</ol></figure>', encoding="utf-8")
+    sec = Section(id="s1", title="عنوان", arabic_html="<p>نص</p>")
+    sec.figures.append(Figure(kind="timeline", path=str(frag), caption=""))
+    state = StudyState(source_ref="x")
+    state.sections.append(sec)
+    html = _builder(tmp_path).build(state, title="عنوان")
+    assert 'class="timeline"' in html

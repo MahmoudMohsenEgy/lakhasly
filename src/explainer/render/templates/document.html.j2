@@ -31,8 +31,12 @@
     <h2>{{ sec.title | safe }}</h2>
     {{ sec.arabic_html | safe }}
     {% for fig in sec.figures %}
+      {% if fig.inline_html %}
+        {{ fig.inline_html | safe }}
+      {% else %}
       <figure><img src="{{ fig.data_uri }}" alt="{{ fig.alt }}">
         <figcaption>{{ fig.caption_html | safe }}</figcaption></figure>
+      {% endif %}
     {% endfor %}
   </section>
 {% endfor %}

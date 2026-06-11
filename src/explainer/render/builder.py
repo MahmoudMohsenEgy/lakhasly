@@ -25,10 +25,14 @@ class Jinja2HtmlBuilder:
         sections, questions, answers = [], [], []
         n = 0
         for sec in state.sections:
-            figs = [{"data_uri": self._data_uri(f.path),
-                     "caption_html": self._fmt.format(f.caption),
-                     "alt": f.caption.replace("[[", "").replace("]]", "")}
-                    for f in sec.figures]
+            figs = []
+            for f in sec.figures:
+                if f.kind in ("table", "timeline"):
+                    figs.append({"inline_html": self._assets.read_bytes(f.path).decode("utf-8")})
+                else:
+                    figs.append({"data_uri": self._data_uri(f.path),
+                                 "caption_html": self._fmt.format(f.caption),
+                                 "alt": f.caption.replace("[[", "").replace("]]", "")})
             sections.append({"title": self._fmt.format(sec.title),
                              "arabic_html": self._fmt.format(sec.arabic_html),
                              "figures": figs})
