@@ -32,4 +32,4 @@ def build_agent(config: Config, *, llm_provider: LLMProvider | None = None,
         registry=registry, normalizer=normalizer, llm_provider=llm, search=search,
         diagrams=PlaywrightMermaidRenderer(), charts=MatplotlibChartRenderer(),
         builder=builder, renderer=PlaywrightPdfRenderer(), assets=assets, config=config,
-        progress=progress)
+        term_formatter=term_fmt, progress=progress)

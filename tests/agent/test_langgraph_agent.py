@@ -1,6 +1,7 @@
 from explainer.agent.langgraph_agent import LangGraphAgent, SYSTEM_PROMPT
 from explainer.state import LoadedSource
 from explainer.config import Config
+from explainer.render.bidi import BidiTermFormatter
 
 class FakeRegistry:
     def __init__(self, text): self._text = text
@@ -24,7 +25,8 @@ def _agent(text, monkeypatch, captured):
     monkeypatch.setattr(mod, "create_react_agent", fake_create)
     return LangGraphAgent(registry=FakeRegistry(text), normalizer=FakeNorm(),
         llm_provider=FakeLLM(), search=object(), diagrams=FakeDiagram(),
-        charts=object(), builder=object(), renderer=object(), assets=object(), config=cfg)
+        charts=object(), builder=object(), renderer=object(), assets=object(), config=cfg,
+        term_formatter=BidiTermFormatter())
 
 def test_run_prepares_state_and_invokes(monkeypatch):
     captured = {}
@@ -61,7 +63,7 @@ def test_run_handles_recursion_error(monkeypatch):
     monkeypatch.setattr(mod, "create_react_agent", fake_create)
     agent = LangGraphAgent(registry=FakeRegistry(), normalizer=FakeNorm(), llm_provider=FakeLLM(),
         search=object(), diagrams=FakeDiagram(), charts=object(), builder=object(),
-        renderer=object(), assets=object(), config=cfg)
+        renderer=object(), assets=object(), config=cfg, term_formatter=BidiTermFormatter())
     state = agent.run("x.txt")
     assert state.pdf_path == ""
     assert captured["closed"] is True

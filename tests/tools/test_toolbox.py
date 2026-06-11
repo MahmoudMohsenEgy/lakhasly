@@ -3,6 +3,7 @@ from explainer.state import StudyState
 from explainer.config import Config
 from explainer.interfaces import SearchResult
 from explainer.tools.toolbox import build_tools, shuffle_options
+from explainer.render.bidi import BidiTermFormatter
 
 class FakeSearch:
     def search(self, query, k=5): return [SearchResult("T", "U", "S")]
@@ -23,6 +24,7 @@ class FakeAssets:
     def __init__(self, tmp): self.tmp, self.n = tmp, 0
     def allocate(self, suffix): self.n += 1; return str(Path(self.tmp) / f"a{self.n}{suffix}")
     def read_bytes(self, path): return Path(path).read_bytes()
+    def write_text(self, path, text): Path(path).write_text(text, encoding="utf-8")
 
 class FakeBuilder:
     def build(self, state, title): return f"<html>{title}:{len(state.sections)}</html>"
@@ -36,7 +38,8 @@ def _tools(state, tmp):
     cfg = Config(azure_endpoint="x", azure_deployment="d", output_dir=str(tmp))
     tools = build_tools(state, search=FakeSearch(), diagrams=FakeDiagram(),
                         charts=FakeChart(), assets=FakeAssets(str(tmp)),
-                        builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg)
+                        builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg,
+                        term_formatter=BidiTermFormatter())
     return {t.name: t for t in tools}
 
 def test_outline_progress_and_write(tmp_path):
@@ -82,7 +85,8 @@ def test_render_mermaid_failsoft_on_exception(tmp_path):
     cfg = Config(azure_endpoint="x", azure_deployment="d", output_dir=str(tmp_path))
     tools = {t.name: t for t in build_tools(state, search=FakeSearch(), diagrams=RaisingDiagram(),
                 charts=FakeChart(), assets=FakeAssets(str(tmp_path)),
-                builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg)}
+                builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg,
+                term_formatter=BidiTermFormatter())}
     out = tools["render_mermaid"].invoke({"code": "graph TD; A-->B;"})
     assert "error" in out.lower() and "chromium crashed" in out
 

@@ -5,7 +5,7 @@ from explainer.state import StudyState, OutlineItem, Section, Figure, MCQ
 from explainer.config import Config
 from explainer.interfaces import (
     SearchClient, DiagramRenderer, ChartRenderer, AssetStore,
-    DocumentBuilder, DocumentRenderer)
+    DocumentBuilder, DocumentRenderer, TermFormatter)
 
 
 def shuffle_options(options: list, answer_index: int, seed: str):
@@ -24,7 +24,8 @@ def shuffle_options(options: list, answer_index: int, seed: str):
 
 def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRenderer,
                 charts: ChartRenderer, assets: AssetStore, builder: DocumentBuilder,
-                renderer: DocumentRenderer, config: Config, progress=None):
+                renderer: DocumentRenderer, config: Config, term_formatter: TermFormatter,
+                progress=None):
     # progress(stage: str, detail: dict) is optional; callers that don't pass it (CLI)
     # get a no-op so the tools stay unchanged for them.
     emit = progress or (lambda stage, detail=None: None)
