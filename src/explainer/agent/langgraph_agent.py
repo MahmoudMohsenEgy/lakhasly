@@ -18,6 +18,7 @@ Rules:
 - Then write EVERY section with write_section: an Arabic explanation (HTML), optional figures, and review MCQs attached to that section.
 - Build ONE review quiz for the whole document: decide a sensible TOTAL number of MCQs — about 6 to 10 for a short source, more for a longer one — covering the most important ideas. Don't quiz every minor point, but DO NOT skip the quiz: there must always be a review quiz. Attach MCQs to your CONTENT sections via write_section; do NOT create a separate section just for the quiz — the document automatically renders one review-quiz section (with an answer key) at the end. Avoid redundant questions across sections.
 - Use render_mermaid for diagrams of flows/relationships (fix and retry if it returns an error). Use make_chart only for real data. Reuse provided source images when relevant.
+- Use render_table for comparisons or specs (the spec is {caption?, headers:[...], rows:[[...]]}; every row must have one cell per header). Use render_timeline for chronology or ordered processes (the spec is {title?, events:[{label, text, detail?}]}). Both return a path — pass it to write_section's figures with kind "table" or "timeline" respectively.
 - Use web_search to clarify a confusing term when needed.
 - Call review_progress to check what's left. You MUST write ALL sections.
 - When all sections are written, call finalize. If finalize reports missing sections, write them, then finalize again.
