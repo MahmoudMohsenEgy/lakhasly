@@ -7,6 +7,8 @@ def build_table_html(spec: dict, formatter: TermFormatter) -> str:
     spec = {"caption"?: str, "headers": list[str], "rows": list[list[str]]}
     Caller (the tool) is responsible for validation; this assumes a well-formed spec.
     Every user string is run through the term formatter so [[term]] and math survive.
+    Cell text is NOT HTML-escaped (the agent is trusted to emit HTML-safe content),
+    consistent with how section HTML and captions are handled elsewhere in the pipeline.
     """
     fmt = formatter.format
     headers = "".join(f"<th>{fmt(h)}</th>" for h in spec["headers"])
@@ -31,6 +33,8 @@ def build_timeline_html(spec: dict, formatter: TermFormatter) -> str:
     """Build a vertical RTL timeline fragment from a validated spec.
 
     spec = {"title"?: str, "events": list[{"label": str, "text": str, "detail"?: str}]}
+    Caller (the tool) validates the spec. Strings are NOT HTML-escaped (agent-trusted),
+    consistent with the rest of the rendering pipeline; they only pass the term formatter.
     """
     fmt = formatter.format
     items = []

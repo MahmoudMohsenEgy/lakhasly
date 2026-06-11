@@ -94,3 +94,26 @@ def test_timeline_figure_is_inlined(tmp_path):
     state.sections.append(sec)
     html = _builder(tmp_path).build(state, title="عنوان")
     assert 'class="timeline"' in html
+
+def test_render_table_tool_fragment_flows_through_builder_with_terms(tmp_path):
+    # End-to-end: the render_table tool writes a fragment whose cell contains a
+    # [[term]]; the builder must inline that fragment and the .term span must
+    # survive into the final document (the tool→builder→formatter seam).
+    from explainer.tools.toolbox import build_tools
+    store = LocalAssetStore(str(tmp_path))
+    cfg = Config(azure_endpoint="x", azure_deployment="d", output_dir=str(tmp_path))
+    state = StudyState(source_ref="x")
+    tools = {t.name: t for t in build_tools(
+        state, search=None, diagrams=None, charts=None, assets=store,
+        builder=None, renderer=None, config=cfg, term_formatter=BidiTermFormatter())}
+    msg = tools["render_table"].invoke({"spec": {
+        "headers": ["البروتوكول"], "rows": [["[[HTTP]]"]]}})
+    path = msg.split("saved at", 1)[1].strip()
+
+    sec = Section(id="s1", title="عنوان", arabic_html="<p>نص</p>")
+    sec.figures.append(Figure(kind="table", path=path, caption=""))
+    state.sections.append(sec)
+    html = _builder(tmp_path).build(state, title="عنوان")
+    assert '<table dir="rtl">' in html
+    assert '<span dir="ltr" class="term">HTTP</span>' in html  # term survived to final doc
+    assert "[[HTTP]]" not in html
