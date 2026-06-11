@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from explainer.config import Config
 from explainer.uploaders.factory import build_uploader
 from explainer.web import library
+from explainer.web import thumbnails
 from explainer.web.jobs import JobManager
 
 _STATIC = Path(__file__).parent / "static"
@@ -72,6 +73,20 @@ def create_app(config: Config | None = None, manager: JobManager | None = None,
             raise HTTPException(status_code=404, detail="PDF not found.")
         return FileResponse(str(path), media_type="application/pdf",
                             headers={"Content-Disposition": f'inline; filename="{module_id}.pdf"'})
+
+    @app.get("/api/modules/{module_id}/thumb")
+    def module_thumb(module_id: str) -> FileResponse:
+        pdf = library.module_pdf_path(modules_dir, module_id)  # validates id + existence
+        if pdf is None:
+            raise HTTPException(status_code=404, detail="Module not found.")
+        thumb = pdf.parent / "thumb.png"
+        if not thumb.exists():
+            try:
+                thumbnails.render_first_page(str(pdf), str(thumb))
+            except Exception:
+                raise HTTPException(status_code=422, detail="Thumbnail unavailable.")
+        return FileResponse(str(thumb), media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
     @app.get("/api/drive/status")
     def drive_status() -> dict:

@@ -53,6 +53,7 @@ def list_modules(modules_dir: Path) -> list[dict]:
                 "created_at": m.get("created_at", ""),
                 "drive_link": m.get("drive_link", ""),
                 "pdf_url": f"/api/modules/{d.name}/pdf",
+                "thumb_url": f"/api/modules/{d.name}/thumb",
             })
     out.sort(key=lambda x: x["created_at"], reverse=True)
     return out

@@ -1,3 +1,4 @@
+import shutil
 import time
 from pathlib import Path
 
@@ -47,6 +48,55 @@ def _wait_for(client, job_id, timeout=5.0):
             return job
         time.sleep(0.02)
     raise AssertionError(f"job did not finish: {job}")
+
+
+_PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+_SAMPLE_PDF = Path(__file__).parent.parent / "fixtures" / "sample.pdf"
+
+
+def _seed_module(tmp_path, module_id, name, pdf_src=_SAMPLE_PDF):
+    """Drop a ready module (meta.json + study.pdf) straight onto disk."""
+    mod = Path(tmp_path) / "web" / module_id
+    mod.mkdir(parents=True, exist_ok=True)
+    shutil.copy(pdf_src, mod / "study.pdf")
+    (mod / "meta.json").write_text(
+        f'{{"name": "{name}", "created_at": "2026-06-11T10:00:00"}}', encoding="utf-8")
+    return mod
+
+
+def test_modules_listing_includes_thumb_url(tmp_path):
+    _seed_module(tmp_path, "20260611-100000-algebra", "Algebra")
+    client = _client(tmp_path)
+    mods = client.get("/api/modules").json()
+    m = next(x for x in mods if x["id"] == "20260611-100000-algebra")
+    assert m["thumb_url"] == "/api/modules/20260611-100000-algebra/thumb"
+
+
+def test_thumb_renders_png_and_caches(tmp_path):
+    mod = _seed_module(tmp_path, "20260611-100000-algebra", "Algebra")
+    client = _client(tmp_path)
+
+    r = client.get("/api/modules/20260611-100000-algebra/thumb")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    assert r.content[:8] == _PNG_MAGIC
+    assert (mod / "thumb.png").exists()  # cached to disk
+
+    r2 = client.get("/api/modules/20260611-100000-algebra/thumb")
+    assert r2.status_code == 200 and r2.content[:8] == _PNG_MAGIC
+
+
+def test_thumb_unknown_module_is_404(tmp_path):
+    assert _client(tmp_path).get("/api/modules/nope/thumb").status_code == 404
+
+
+def test_thumb_unrenderable_pdf_is_422(tmp_path):
+    mod = Path(tmp_path) / "web" / "20260611-100000-bad"
+    mod.mkdir(parents=True, exist_ok=True)
+    (mod / "study.pdf").write_bytes(b"%PDF-1.4 not really a pdf")
+    (mod / "meta.json").write_text(
+        '{"name": "Bad", "created_at": "2026-06-11T10:00:00"}', encoding="utf-8")
+    assert _client(tmp_path).get("/api/modules/20260611-100000-bad/thumb").status_code == 422
 
 
 def test_generate_requires_content(tmp_path):
