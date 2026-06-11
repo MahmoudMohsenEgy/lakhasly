@@ -14,3 +14,8 @@ client_secret*.json
 
 # Visual brainstorming companion (local mockups)
 .superpowers/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
