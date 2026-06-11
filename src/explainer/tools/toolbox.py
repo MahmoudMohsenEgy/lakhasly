@@ -85,6 +85,21 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         return f"Table saved at {path}"
 
     @tool
+    def render_timeline(spec: dict) -> str:
+        """Render a chronology/process timeline as native RTL HTML.
+        spec={title?:str, events:[{label:str, text:str, detail?:str}, ...]}; events must be non-empty."""
+        events = spec.get("events")
+        if not isinstance(events, list) or not events:
+            return "Timeline error (fix spec and retry): 'events' must be a non-empty list."
+        for i, ev in enumerate(events):
+            if not isinstance(ev, dict) or not ev.get("label") or not ev.get("text"):
+                return f"Timeline error (fix spec and retry): event {i} needs both 'label' and 'text'."
+        html = build_timeline_html(spec, term_formatter)
+        path = assets.allocate(".html")
+        assets.write_text(path, html)
+        return f"Timeline saved at {path}"
+
+    @tool
     def write_section(id: str, title: str, arabic_html: str,
                       figures: list[dict], mcqs: list[dict]) -> str:
         """Save a completed section. figures=[{kind,path,caption}]; mcqs=[{question,options,answer_index,explanation}]."""
@@ -128,4 +143,4 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         return f"PDF created at {state.pdf_path}"
 
     return [propose_outline, review_progress, render_mermaid, make_chart,
-            render_table, write_section, web_search, finalize]
+            render_table, render_timeline, write_section, web_search, finalize]

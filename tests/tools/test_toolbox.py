@@ -149,3 +149,30 @@ def test_render_table_rejects_empty_headers(tmp_path):
     tools = _tools(state, tmp_path)
     msg = tools["render_table"].invoke({"spec": {"headers": [], "rows": [[]]}})
     assert "error" in msg.lower()
+
+def test_render_timeline_writes_fragment_and_returns_path(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_timeline"].invoke({"spec": {
+        "title": "تطور [[HTTP]]",
+        "events": [{"label": "1991", "text": "[[HTTP]] 0.9"},
+                   {"label": "1996", "text": "[[HTTP]] 1.0"}]}})
+    assert "saved at" in msg
+    path = msg.split("saved at", 1)[1].strip()
+    assert path.endswith(".html")
+    html = Path(path).read_text(encoding="utf-8")
+    assert 'class="timeline"' in html
+    assert html.count("<li>") == 2
+
+def test_render_timeline_rejects_empty_events(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_timeline"].invoke({"spec": {"events": []}})
+    assert "error" in msg.lower()
+
+def test_render_timeline_rejects_event_missing_text(tmp_path):
+    state = StudyState(source_ref="x")
+    tools = _tools(state, tmp_path)
+    msg = tools["render_timeline"].invoke({"spec": {
+        "events": [{"label": "1991"}]}})
+    assert "error" in msg.lower()
