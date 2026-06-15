@@ -103,7 +103,16 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
     def write_section(id: str, title: str, arabic_html: str,
                       figures: list[dict], mcqs: list[dict]) -> str:
         """Save a completed section. figures=[{kind,path,caption}]; mcqs=[{question,options,answer_index,explanation}]."""
-        figs = [Figure(kind=f["kind"], path=f["path"], caption=f.get("caption", "")) for f in figures]
+        # Only keep figures whose file actually exists on disk. A render tool that
+        # failed (e.g. a mermaid diagram that didn't compile) returns an error and
+        # writes no file, so a path referencing it would crash the final assembly.
+        figs, dropped = [], []
+        for f in figures:
+            path = f["path"]
+            if Path(path).is_file():
+                figs.append(Figure(kind=f["kind"], path=path, caption=f.get("caption", "")))
+            else:
+                dropped.append(path)
         questions = []
         for m in mcqs:
             opts, ans = shuffle_options(m["options"], m["answer_index"], m["question"])
@@ -114,6 +123,10 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
                                       figures=figs, mcqs=questions))
         done = len({s.id for s in state.sections} & {o.id for o in state.outline}) or len(state.sections)
         emit("writing", {"done": done, "total": len(state.outline), "title": title})
+        if dropped:
+            return (f"Section '{id}' saved, but {len(dropped)} figure(s) were dropped because their "
+                    f"files do not exist (the render likely failed): {', '.join(dropped)}. "
+                    f"Re-render those figures and call write_section again if you need them.")
         return f"Section '{id}' saved."
 
     @tool

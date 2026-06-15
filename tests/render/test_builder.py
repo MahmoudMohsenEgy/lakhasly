@@ -95,6 +95,22 @@ def test_timeline_figure_is_inlined(tmp_path):
     html = _builder(tmp_path).build(state, title="عنوان")
     assert 'class="timeline"' in html
 
+def test_missing_figure_file_is_skipped_not_fatal(tmp_path):
+    # A figure can reference a file that was never written — e.g. a mermaid render
+    # that failed (no SVG produced) but whose figure still got recorded in a section.
+    # One missing figure must NOT take down the whole document: it is skipped, and
+    # the surrounding section content still renders.
+    state = StudyState(source_ref="x")
+    sec = Section(id="s1", title="عنوان", arabic_html="<p>محتوى القسم</p>")
+    sec.figures.append(Figure(kind="mermaid",
+                              path=str(tmp_path / "assets" / "asset_12.svg"),  # never written
+                              caption="مخطط"))
+    state.sections.append(sec)
+    html = _builder(tmp_path).build(state, title="عنوان")   # must not raise FileNotFoundError
+    assert "محتوى القسم" in html        # section body survived
+    assert "data:image" not in html      # the broken figure was not embedded
+
+
 def test_render_table_tool_fragment_flows_through_builder_with_terms(tmp_path):
     # End-to-end: the render_table tool writes a fragment whose cell contains a
     # [[term]]; the builder must inline that fragment and the .term span must

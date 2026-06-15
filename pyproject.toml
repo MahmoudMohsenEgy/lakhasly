@@ -25,3 +25,5 @@ where = ["src"]
 # the web frontend and the PDF document templates.
 "explainer.web" = ["static/*", "static/**/*"]
 "explainer.render" = ["templates/*", "templates/**/*"]
+# Mermaid is bundled (not fetched from a CDN) so diagram rendering works offline.
+"explainer.figures" = ["vendor/*"]

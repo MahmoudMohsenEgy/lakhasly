@@ -8,6 +8,8 @@ no certificate management, no reverse proxy to maintain.
 
 - **Outbound internet** at render time: Azure OpenAI, the search backend (Tavily or
   DuckDuckGo), Google Fonts (the Cairo font in the PDF) and a CDN (KaTeX for math).
+  Mermaid diagrams do **not** need outbound internet — the mermaid library is bundled
+  into the image (`explainer/figures/vendor/mermaid.min.js`) and rendered offline.
 - **Secrets** (set in `.env`): Azure OpenAI endpoint/deployment/key, and a Tavily key
   if `SEARCH_BACKEND=tavily`.
 - **One process only.** Job state is in-memory, so never scale to multiple workers or
