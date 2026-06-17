@@ -6,7 +6,7 @@ from explainer.state import StudyState, OutlineItem, Section, Figure, MCQ, inval
 from explainer.config import Config
 from explainer.interfaces import (
     SearchClient, DiagramRenderer, ChartRenderer, AssetStore,
-    DocumentBuilder, DocumentRenderer, TermFormatter)
+    DocumentBuilder, DocumentRenderer, TermFormatter, Verifier)
 from explainer.render.fragments import build_table_html, build_timeline_html
 
 
@@ -28,10 +28,29 @@ def shuffle_options(options: list, answer_index: int, seed: str):
     new_answer = order.index(answer_index)
     return new_options, new_answer
 
+def render_final_document(state, title, *, builder, renderer, config,
+                          unresolved=None, emit=None):
+    """Sort sections by outline order, build HTML, render PDF, return pdf_path."""
+    unresolved = unresolved or []
+    emit = emit or (lambda *a, **k: None)
+    order = {o.id: i for i, o in enumerate(state.outline)}
+    state.sections.sort(key=lambda s: order.get(s.id, 999))
+    emit("rendering", {})
+    state.document_title = title
+    if unresolved:
+        state.errors.extend(
+            f"Unresolved verification: [{f.kind}] {f.section_id}: {f.detail}"
+            for f in unresolved)
+    state.assembled_html = builder.build(state, title, unresolved=unresolved)
+    out = str(Path(config.output_dir) / "study.pdf")
+    state.pdf_path = renderer.render(state.assembled_html, out)
+    return state.pdf_path
+
+
 def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRenderer,
                 charts: ChartRenderer, assets: AssetStore, builder: DocumentBuilder,
                 renderer: DocumentRenderer, config: Config, term_formatter: TermFormatter,
-                verifier, progress=None):
+                verifier: Verifier, progress=None):
     # progress(stage: str, detail: dict) is optional; callers that don't pass it (CLI)
     # get a no-op so the tools stay unchanged for them.
     emit = progress or (lambda stage, detail=None: None)
@@ -152,21 +171,59 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         return "\n".join(f"- {r.title} | {r.url} | {r.snippet}" for r in results) or "No results."
 
     @tool
+    def verify() -> str:
+        """Check all sections, MCQ answers, and figures against the source.
+        Read-only. Call this and resolve every finding before finalize."""
+        rev = state.content_revision
+        report = verifier.verify(state)
+        if state.content_revision != rev:
+            return "Content changed during verification. Run verify again."
+        if report.ok:
+            state.verified = True
+            state.verified_revision = rev
+            state.verification_findings = []
+            state.verification_findings_revision = rev
+            return "Verification passed. You may call finalize."
+        state.verified = False
+        state.verification_attempts += 1
+        state.verification_findings = report.findings
+        state.verification_findings_revision = rev
+        lines = []
+        for f in report.findings:
+            line = f"- [{f.kind}] section {f.section_id}: {f.detail}"
+            if f.correct_answer_text:
+                line += f" | correct answer: {f.correct_answer_text}"
+            if f.suggestion:
+                line += f" | fix: {f.suggestion}"
+            lines.append(line)
+        return ("Verification found issues. Fix each (rewrite the section, "
+                "re-render the figure, or correct the MCQ answer) and then call "
+                "verify again:\n" + "\n".join(lines))
+
+    @tool
     def finalize(title: str) -> str:
-        """Assemble the document and render the final PDF. Refuses if any section is unwritten."""
+        """Assemble the document and render the final PDF. Requires a passing verify
+        for the current content (or renders with warnings after repeated attempts)."""
         if not state.outline:
             return "Cannot finalize: propose_outline has not been called yet."
         done = {s.id for s in state.sections}
         missing = [o.id for o in state.outline if o.id not in done]
         if missing:
             return f"Cannot finalize. Unwritten sections: {', '.join(missing)}"
-        order = {o.id: i for i, o in enumerate(state.outline)}
-        state.sections.sort(key=lambda s: order.get(s.id, 999))
-        emit("rendering", {})
-        state.assembled_html = builder.build(state, title)
-        out = str(Path(config.output_dir) / "study.pdf")
-        state.pdf_path = renderer.render(state.assembled_html, out)
-        return f"PDF created at {state.pdf_path}"
+        fresh = state.verified and state.verified_revision == state.content_revision
+        exhausted = (state.verification_attempts >= config.max_verification_attempts
+                     and state.verification_findings
+                     and state.verification_findings_revision == state.content_revision)
+        if not fresh and not exhausted:
+            return ("Cannot finalize: call verify and resolve every finding first. "
+                    "(After repeated attempts it will finalize with warnings.)")
+        unresolved = [] if fresh else list(state.verification_findings)
+        render_final_document(state, title, builder=builder, renderer=renderer,
+                              config=config, unresolved=unresolved, emit=emit)
+        msg = f"PDF created at {state.pdf_path}"
+        if unresolved:
+            msg += f" (with {len(unresolved)} unresolved verification warning(s))"
+        return msg
 
     return [propose_outline, review_progress, render_mermaid, make_chart,
-            render_table, render_timeline, write_section, web_search, finalize]
+            render_table, render_timeline, write_section, web_search, verify, finalize]

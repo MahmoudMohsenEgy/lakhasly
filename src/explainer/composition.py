@@ -20,7 +20,7 @@ from explainer.agent.langgraph_agent import LangGraphAgent
 from explainer.verify.verifier import LLMVerifier
 
 def build_agent(config: Config, *, llm_provider: LLMProvider | None = None,
-                progress=None) -> ExplainerAgent:
+                verifier=None, progress=None) -> ExplainerAgent:
     assets = LocalAssetStore(str(Path(config.output_dir) / "assets"))
     registry = LoaderRegistry([UrlLoader(), PdfLoader(assets), SubtitleLoader(), TextLoader()])
     normalizer = BasicNormalizer()
@@ -29,9 +29,9 @@ def build_agent(config: Config, *, llm_provider: LLMProvider | None = None,
               else DuckDuckGoClient())
     term_fmt = BidiTermFormatter()
     builder = Jinja2HtmlBuilder(term_fmt, assets, config)
-    verifier = LLMVerifier(llm, config)
+    resolved_verifier = verifier if verifier is not None else LLMVerifier(llm, config)
     return LangGraphAgent(
         registry=registry, normalizer=normalizer, llm_provider=llm, search=search,
         diagrams=PlaywrightMermaidRenderer(), charts=MatplotlibChartRenderer(),
         builder=builder, renderer=PlaywrightPdfRenderer(), assets=assets, config=config,
-        term_formatter=term_fmt, verifier=verifier, progress=progress)
+        term_formatter=term_fmt, verifier=resolved_verifier, progress=progress)
