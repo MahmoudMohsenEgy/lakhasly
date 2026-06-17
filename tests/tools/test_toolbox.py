@@ -176,3 +176,40 @@ def test_render_timeline_rejects_event_missing_text(tmp_path):
     msg = tools["render_timeline"].invoke({"spec": {
         "events": [{"label": "1991"}]}})
     assert "error" in msg.lower()
+
+
+def test_write_section_records_figure_source_and_invalidates(tmp_path):
+    from explainer.tools.toolbox import _canon
+    state = StudyState(source_ref="x")
+    t = _tools(state, tmp_path)
+    mermaid_code = "graph TD; A-->B;"
+    msg = t["render_mermaid"].invoke({"code": mermaid_code})
+    assert "saved" in msg.lower()
+    # extract the path from the return message "Diagram saved at <path>"
+    rendered_path = msg.split("saved at", 1)[1].strip()
+    # verify figure_sources was populated by render_mermaid
+    assert state.figure_sources[_canon(rendered_path)] == mermaid_code
+    # set verified=True to prove the reset
+    state.verified = True
+    old_revision = state.content_revision
+    t["write_section"].invoke({
+        "id": "s1", "title": "Intro", "arabic_html": "<p>أهلا</p>",
+        "figures": [{"kind": "mermaid", "path": rendered_path, "caption": "test fig"}],
+        "mcqs": []
+    })
+    assert len(state.sections) == 1
+    assert state.sections[0].figures[0].source == mermaid_code
+    assert state.figure_sources[_canon(rendered_path)] == mermaid_code
+    assert state.content_revision == old_revision + 1
+    assert state.verified is False
+
+
+def test_propose_outline_invalidates_verification(tmp_path):
+    state = StudyState(source_ref="x")
+    t = _tools(state, tmp_path)
+    state.verified = True
+    state.verified_revision = 0
+    old_revision = state.content_revision
+    t["propose_outline"].invoke({"items": [{"id": "s1", "title": "Intro", "brief": "b"}]})
+    assert state.verified is False
+    assert state.content_revision == old_revision + 1

@@ -1,12 +1,17 @@
+import json
 import random
 from pathlib import Path
 from langchain_core.tools import tool
-from explainer.state import StudyState, OutlineItem, Section, Figure, MCQ
+from explainer.state import StudyState, OutlineItem, Section, Figure, MCQ, invalidate_verification
 from explainer.config import Config
 from explainer.interfaces import (
     SearchClient, DiagramRenderer, ChartRenderer, AssetStore,
     DocumentBuilder, DocumentRenderer, TermFormatter)
 from explainer.render.fragments import build_table_html, build_timeline_html
+
+
+def _canon(path: str) -> str:
+    return str(Path(path).resolve())
 
 
 def shuffle_options(options: list, answer_index: int, seed: str):
@@ -36,6 +41,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         """Register the ordered section checklist. Each item: {id, title, brief}."""
         state.outline = [OutlineItem(id=i["id"], title=i["title"], brief=i.get("brief", ""))
                          for i in items]
+        invalidate_verification(state)
         emit("outlining", {"total": len(state.outline)})
         return f"Outline registered ({len(state.outline)}): " + ", ".join(o.id for o in state.outline)
 
@@ -54,6 +60,8 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
             ok, result = diagrams.render(code, out)
         except Exception as e:
             return f"Mermaid error (fix and retry): {e}"
+        if ok:
+            state.figure_sources[_canon(result)] = code
         return f"Diagram saved at {result}" if ok else f"Mermaid error (fix and retry): {result}"
 
     @tool
@@ -61,6 +69,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         """Render a matplotlib chart. spec={type:'bar'|'line', title, x:[...], y:[...]}."""
         try:
             path = charts.render(spec, assets.allocate(".png"))
+            state.figure_sources[_canon(path)] = json.dumps(spec, ensure_ascii=False)
             return f"Chart saved at {path}"
         except Exception as e:
             return f"Chart error (fix spec and retry): {e}"
@@ -82,6 +91,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         html = build_table_html(spec, term_formatter)
         path = assets.allocate(".html")
         assets.write_text(path, html)
+        state.figure_sources[_canon(path)] = json.dumps(spec, ensure_ascii=False)
         return f"Table saved at {path}"
 
     @tool
@@ -97,6 +107,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         html = build_timeline_html(spec, term_formatter)
         path = assets.allocate(".html")
         assets.write_text(path, html)
+        state.figure_sources[_canon(path)] = json.dumps(spec, ensure_ascii=False)
         return f"Timeline saved at {path}"
 
     @tool
@@ -110,7 +121,8 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         for f in figures:
             path = f["path"]
             if Path(path).is_file():
-                figs.append(Figure(kind=f["kind"], path=path, caption=f.get("caption", "")))
+                figs.append(Figure(kind=f["kind"], path=path, caption=f.get("caption", ""),
+                                   source=state.figure_sources.get(_canon(path), "")))
             else:
                 dropped.append(path)
         questions = []
@@ -121,6 +133,7 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         state.sections = [s for s in state.sections if s.id != id]
         state.sections.append(Section(id=id, title=title, arabic_html=arabic_html,
                                       figures=figs, mcqs=questions))
+        invalidate_verification(state)
         done = len({s.id for s in state.sections} & {o.id for o in state.outline}) or len(state.sections)
         emit("writing", {"done": done, "total": len(state.outline), "title": title})
         if dropped:
