@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
-from explainer.state import LoadedSource, StudyState
+from explainer.state import LoadedSource, StudyState, VerificationReport
 
 @dataclass
 class SearchResult:
@@ -27,7 +27,7 @@ class SourceLoader(Protocol):
 
 @runtime_checkable
 class LLMProvider(Protocol):
-    def chat_model(self): ...  # returns a tool-calling LangChain chat model
+    def chat_model(self, *, temperature: float | None = None): ...  # returns a tool-calling LangChain chat model
 
 @runtime_checkable
 class SearchClient(Protocol):
@@ -48,7 +48,11 @@ class TermFormatter(Protocol):
 
 @runtime_checkable
 class DocumentBuilder(Protocol):
-    def build(self, state: StudyState, title: str) -> str: ...
+    def build(self, state: StudyState, title: str, unresolved: list | None = None) -> str: ...
+
+@runtime_checkable
+class Verifier(Protocol):
+    def verify(self, state: StudyState) -> VerificationReport: ...
 
 @runtime_checkable
 class DocumentRenderer(Protocol):

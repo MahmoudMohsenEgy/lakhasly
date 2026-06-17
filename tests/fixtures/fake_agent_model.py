@@ -24,4 +24,4 @@ class ScriptedToolModel(GenericFakeChatModel):
 
 class ScriptedProvider:
     def __init__(self, model): self._model = model
-    def chat_model(self): return self._model
+    def chat_model(self, *, temperature=None): return self._model
