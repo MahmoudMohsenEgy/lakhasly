@@ -34,10 +34,12 @@ def _strip_html(html: str) -> str:
 
 
 def _chunk(text: str, size: int, overlap: int) -> list[str]:
+    if not text:
+        return [""]
     if size <= 0:
         return [text]
     step = max(1, size - max(0, overlap))
-    return [text[i:i + size] for i in range(0, len(text), step)] or [""]
+    return [text[i:i + size] for i in range(0, len(text), step)]
 
 
 class LLMVerifier:
@@ -68,12 +70,15 @@ class LLMVerifier:
         ])
         terms = _tokens(query)
         scored = sorted(chunks, key=lambda c: len(terms & _tokens(c)), reverse=True)
+        _SEP_LEN = 6  # len("\n...\n")
         out, total = [], 0
         for c in scored:
-            if total + len(c) > self._cfg.verifier_max_source_chars:
+            # separator cost: 0 for first chunk, _SEP_LEN for each subsequent
+            sep_cost = _SEP_LEN if out else 0
+            if total + sep_cost + len(c) > self._cfg.verifier_max_source_chars:
                 continue
             out.append(c)
-            total += len(c)
+            total += sep_cost + len(c)
             if total >= self._cfg.verifier_max_source_chars:
                 break
         return "\n...\n".join(out) if out else scored[0][: self._cfg.verifier_max_source_chars]
@@ -127,7 +132,11 @@ class LLMVerifier:
         try:
             return json.loads(text)
         except json.JSONDecodeError:
-            start, end = text.find("{"), text.rfind("}")
-            if start != -1 and end > start:
-                return json.loads(text[start:end + 1])  # may raise -> caller catches
-            raise
+            start = text.find("{")
+            if start != -1:
+                try:
+                    obj, _ = json.JSONDecoder().raw_decode(text[start:])
+                    return obj
+                except json.JSONDecodeError:
+                    pass
+            raise json.JSONDecodeError("no JSON object found", text, 0)

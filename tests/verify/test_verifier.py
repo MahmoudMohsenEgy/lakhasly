@@ -57,7 +57,14 @@ def test_large_source_uses_bounded_evidence_window():
     captured = {}
     class Capt(_FakeModel):
         def invoke(self, messages):
-            captured["prompt"] = "\n".join(getattr(m, "content", str(m)) for m in messages)
+            # extract text content whether messages are tuples or objects
+            parts = []
+            for m in messages:
+                if isinstance(m, tuple):
+                    parts.append(m[1])
+                else:
+                    parts.append(getattr(m, "content", str(m)))
+            captured["prompt"] = "\n".join(parts)
             return AIMessage(content=json.dumps({"findings": []}))
     s = StudyState(source_ref="x")
     s.normalized_text = ("APPLE " * 100) + "UNIQUEMARKER photosynthesis " + ("ZEBRA " * 100)
@@ -67,3 +74,25 @@ def test_large_source_uses_bounded_evidence_window():
     # evidence window is bounded and includes the relevant chunk
     assert "UNIQUEMARKER" in captured["prompt"]
     assert len(s.normalized_text) > cfg.verifier_max_source_chars
+    # FIX 4: extract the SOURCE evidence portion and assert its length is bounded
+    prompt = captured["prompt"]
+    evidence_marker = "SOURCE evidence:\n"
+    ev_start = prompt.find(evidence_marker)
+    assert ev_start != -1, "prompt must contain 'SOURCE evidence:' marker"
+    ev_text_start = ev_start + len(evidence_marker)
+    # The evidence ends at the "\n\nSECTION to check" separator
+    section_marker = "\n\nSECTION to check"
+    ev_end = prompt.find(section_marker, ev_text_start)
+    assert ev_end != -1, "prompt must contain SECTION separator"
+    evidence_text = prompt[ev_text_start:ev_end]
+    assert len(evidence_text) <= cfg.verifier_max_source_chars, (
+        f"evidence length {len(evidence_text)} exceeds cap {cfg.verifier_max_source_chars}"
+    )
+
+
+def test_parse_extracts_first_json_object_with_trailing_text():
+    """raw_decode must take the first JSON object; trailing prose/objects are ignored."""
+    reply = '{"findings": []} trailing junk {"x":1}'
+    model = _FakeModel([reply])
+    rep = LLMVerifier(_FakeProvider(model), _cfg()).verify(_state_one_section())
+    assert rep.ok is True
