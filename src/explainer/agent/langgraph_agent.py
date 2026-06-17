@@ -1,8 +1,9 @@
+from pathlib import Path
 from langgraph.prebuilt import create_react_agent
 from langgraph.errors import GraphRecursionError
 from explainer.config import Config
-from explainer.state import StudyState
-from explainer.tools.toolbox import build_tools
+from explainer.state import StudyState, Finding
+from explainer.tools.toolbox import build_tools, render_final_document
 from explainer.interfaces import (
     TextNormalizer, LLMProvider, SearchClient, DiagramRenderer, ChartRenderer,
     DocumentBuilder, DocumentRenderer, AssetStore, TermFormatter)
@@ -21,7 +22,10 @@ Rules:
 - Use render_table for comparisons or specs (the spec is {caption?, headers:[...], rows:[[...]]}; every row must have one cell per header). Use render_timeline for chronology or ordered processes (the spec is {title?, events:[{label, text, detail?}]}). Both return a path — pass it to write_section's figures with kind "table" or "timeline" respectively.
 - Use web_search to clarify a confusing term when needed.
 - Call review_progress to check what's left. You MUST write ALL sections.
-- When all sections are written, call finalize. If finalize reports missing sections, write them, then finalize again.
+- When all sections are written, you MUST call verify and resolve EVERY finding it
+  reports (rewrite the section, re-render the figure, or correct the MCQ answer using
+  the correct answer TEXT it gives). Call verify again until it passes, THEN call
+  finalize. If finalize reports missing sections, write them, verify, and finalize again.
 """
 
 class LangGraphAgent:
@@ -76,8 +80,31 @@ class LangGraphAgent:
             except Exception:  # cleanup must never mask the run's real outcome
                 pass
         if not state.pdf_path:
-            state.errors.append("Agent finished without producing a PDF (budget hit or no finalize).")
-            self._progress("error", {"message": state.errors[-1]})
+            done = {s.id for s in state.sections}
+            complete = state.outline and not [o for o in state.outline if o.id not in done]
+            if complete:
+                fresh = (state.verified
+                         and state.verified_revision == state.content_revision)
+                if not fresh and state.verification_findings_revision != state.content_revision:
+                    try:
+                        report = self._verifier.verify(state)
+                        state.verification_findings = report.findings
+                        state.verification_findings_revision = state.content_revision
+                    except Exception as e:
+                        state.verification_findings = [Finding(
+                            kind="claim", section_id="",
+                            detail=f"verification could not complete: {e}")]
+                        state.verification_findings_revision = state.content_revision
+                unresolved = [] if fresh else list(state.verification_findings)
+                title = state.document_title or Path(state.source_ref).stem or "Study Guide"
+                render_final_document(state, title, builder=self._builder,
+                                      renderer=self._renderer, config=self._config,
+                                      unresolved=unresolved, emit=self._progress)
+                self._progress("done", {"pdf": state.pdf_path})
+            else:
+                state.errors.append(
+                    "Agent finished without producing a PDF (budget hit or no finalize).")
+                self._progress("error", {"message": state.errors[-1]})
         else:
             self._progress("done", {"pdf": state.pdf_path})
         return state
