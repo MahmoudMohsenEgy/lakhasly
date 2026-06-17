@@ -121,7 +121,8 @@ def test_render_table_tool_fragment_flows_through_builder_with_terms(tmp_path):
     state = StudyState(source_ref="x")
     tools = {t.name: t for t in build_tools(
         state, search=None, diagrams=None, charts=None, assets=store,
-        builder=None, renderer=None, config=cfg, term_formatter=BidiTermFormatter())}
+        builder=None, renderer=None, config=cfg, term_formatter=BidiTermFormatter(),
+        verifier=object())}
     msg = tools["render_table"].invoke({"spec": {
         "headers": ["البروتوكول"], "rows": [["[[HTTP]]"]]}})
     path = msg.split("saved at", 1)[1].strip()

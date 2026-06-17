@@ -26,7 +26,7 @@ def shuffle_options(options: list, answer_index: int, seed: str):
 def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRenderer,
                 charts: ChartRenderer, assets: AssetStore, builder: DocumentBuilder,
                 renderer: DocumentRenderer, config: Config, term_formatter: TermFormatter,
-                progress=None):
+                verifier, progress=None):
     # progress(stage: str, detail: dict) is optional; callers that don't pass it (CLI)
     # get a no-op so the tools stay unchanged for them.
     emit = progress or (lambda stage, detail=None: None)

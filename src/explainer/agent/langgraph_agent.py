@@ -28,7 +28,7 @@ class LangGraphAgent:
     def __init__(self, *, registry, normalizer: TextNormalizer, llm_provider: LLMProvider,
                  search: SearchClient, diagrams: DiagramRenderer, charts: ChartRenderer,
                  builder: DocumentBuilder, renderer: DocumentRenderer, assets: AssetStore,
-                 config: Config, term_formatter: TermFormatter, progress=None):
+                 config: Config, term_formatter: TermFormatter, verifier, progress=None):
         self._registry = registry
         self._normalizer = normalizer
         self._llm = llm_provider
@@ -40,6 +40,7 @@ class LangGraphAgent:
         self._assets = assets
         self._config = config
         self._term_formatter = term_formatter
+        self._verifier = verifier
         # optional progress(stage, detail) callback; no-op when not supplied (e.g. CLI)
         self._progress = progress or (lambda stage, detail=None: None)
 
@@ -60,7 +61,8 @@ class LangGraphAgent:
         tools = build_tools(state, search=self._search, diagrams=self._diagrams,
                             charts=self._charts, assets=self._assets, builder=self._builder,
                             renderer=self._renderer, config=self._config,
-                            term_formatter=self._term_formatter, progress=self._progress)
+                            term_formatter=self._term_formatter, verifier=self._verifier,
+                            progress=self._progress)
         try:
             agent = create_react_agent(self._llm.chat_model(), tools)
             agent.invoke(

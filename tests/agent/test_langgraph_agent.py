@@ -26,7 +26,7 @@ def _agent(text, monkeypatch, captured):
     return LangGraphAgent(registry=FakeRegistry(text), normalizer=FakeNorm(),
         llm_provider=FakeLLM(), search=object(), diagrams=FakeDiagram(),
         charts=object(), builder=object(), renderer=object(), assets=object(), config=cfg,
-        term_formatter=BidiTermFormatter())
+        term_formatter=BidiTermFormatter(), verifier=object())
 
 def test_run_prepares_state_and_invokes(monkeypatch):
     captured = {}
@@ -63,7 +63,8 @@ def test_run_handles_recursion_error(monkeypatch):
     monkeypatch.setattr(mod, "create_react_agent", fake_create)
     agent = LangGraphAgent(registry=FakeRegistry(), normalizer=FakeNorm(), llm_provider=FakeLLM(),
         search=object(), diagrams=FakeDiagram(), charts=object(), builder=object(),
-        renderer=object(), assets=object(), config=cfg, term_formatter=BidiTermFormatter())
+        renderer=object(), assets=object(), config=cfg, term_formatter=BidiTermFormatter(),
+        verifier=object())
     state = agent.run("x.txt")
     assert state.pdf_path == ""
     assert captured["closed"] is True

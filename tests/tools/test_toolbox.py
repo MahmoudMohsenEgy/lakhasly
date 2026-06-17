@@ -39,7 +39,7 @@ def _tools(state, tmp):
     tools = build_tools(state, search=FakeSearch(), diagrams=FakeDiagram(),
                         charts=FakeChart(), assets=FakeAssets(str(tmp)),
                         builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg,
-                        term_formatter=BidiTermFormatter())
+                        term_formatter=BidiTermFormatter(), verifier=object())
     return {t.name: t for t in tools}
 
 def test_outline_progress_and_write(tmp_path):
@@ -86,7 +86,7 @@ def test_render_mermaid_failsoft_on_exception(tmp_path):
     tools = {t.name: t for t in build_tools(state, search=FakeSearch(), diagrams=RaisingDiagram(),
                 charts=FakeChart(), assets=FakeAssets(str(tmp_path)),
                 builder=FakeBuilder(), renderer=FakeRenderer(), config=cfg,
-                term_formatter=BidiTermFormatter())}
+                term_formatter=BidiTermFormatter(), verifier=object())}
     out = tools["render_mermaid"].invoke({"code": "graph TD; A-->B;"})
     assert "error" in out.lower() and "chromium crashed" in out
 
