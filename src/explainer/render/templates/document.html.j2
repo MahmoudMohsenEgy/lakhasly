@@ -26,6 +26,12 @@
 </head>
 <body>
 <h1>{{ title | safe }}</h1>
+{% if warnings %}
+<section class="verify-warnings">
+  <h2>⚠️ تنبيهات المراجعة (لم تُحل)</h2>
+  <ul>{% for w in warnings %}<li>{{ w | safe }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
 {% for sec in sections %}
   <section>
     <h2>{{ sec.title | safe }}</h2>

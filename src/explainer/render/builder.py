@@ -21,8 +21,10 @@ class Jinja2HtmlBuilder:
         b64 = base64.b64encode(self._assets.read_bytes(path)).decode("ascii")
         return f"data:{mime};base64,{b64}"
 
-    def build(self, state: StudyState, title: str) -> str:
+    def build(self, state: StudyState, title: str, unresolved: list | None = None) -> str:
         css = (_TEMPLATES / "styles.css").read_text(encoding="utf-8")
+        warnings = [f"[{f.kind}] {self._fmt.format(f.section_id)}: {self._fmt.format(f.detail)}"
+                    for f in (unresolved or [])]
         sections, questions, answers = [], [], []
         n = 0
         for sec in state.sections:
@@ -54,5 +56,5 @@ class Jinja2HtmlBuilder:
                                 "letter": chr(ord('A') + mcq.answer_index),
                                 "explanation": self._fmt.format(mcq.explanation)})
         return self._env.get_template("document.html.j2").render(
-            title=self._fmt.format(title), css=css,
+            title=self._fmt.format(title), css=css, warnings=warnings,
             sections=sections, questions=questions, answers=answers)

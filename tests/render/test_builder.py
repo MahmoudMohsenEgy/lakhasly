@@ -133,3 +133,28 @@ def test_render_table_tool_fragment_flows_through_builder_with_terms(tmp_path):
     assert '<table dir="rtl">' in html
     assert '<span dir="ltr" class="term">HTTP</span>' in html  # term survived to final doc
     assert "[[HTTP]]" not in html
+
+def test_build_renders_warning_banner_only_when_unresolved():
+    from explainer.state import StudyState, Section, Finding
+    from explainer.render.builder import Jinja2HtmlBuilder
+    from explainer.render.bidi import BidiTermFormatter
+    from explainer.config import Config
+
+    class _Assets:
+        def read_bytes(self, p): return b""
+        def write_text(self, p, t): pass
+        def allocate(self, s): return "x" + s
+
+    cfg = Config(azure_endpoint="e", azure_deployment="d")
+    b = Jinja2HtmlBuilder(BidiTermFormatter(), _Assets(), cfg)
+    s = StudyState(source_ref="x")
+    s.outline = []
+    s.sections = [Section(id="s1", title="Title", arabic_html="<p>hi</p>")]
+
+    without = b.build(s, "Doc")
+    assert "verify-warnings" not in without
+
+    finding = Finding(kind="mcq", section_id="s1", detail="answer is wrong")
+    with_warn = b.build(s, "Doc", unresolved=[finding])
+    assert "verify-warnings" in with_warn
+    assert "answer is wrong" in with_warn
