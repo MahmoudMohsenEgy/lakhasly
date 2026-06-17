@@ -23,6 +23,7 @@ class Figure:
     kind: Literal["image", "mermaid", "chart", "table", "timeline"]
     path: str
     caption: str = ""
+    source: str = ""
 
 @dataclass
 class MCQ:
@@ -51,3 +52,35 @@ class StudyState:
     assembled_html: str = ""
     pdf_path: str = ""
     errors: list[str] = field(default_factory=list)
+    figure_sources: dict[str, str] = field(default_factory=dict)
+    content_revision: int = 0
+    verified: bool = False
+    verified_revision: int = -1
+    verification_attempts: int = 0
+    verification_findings: list["Finding"] = field(default_factory=list)
+    verification_findings_revision: int = -1
+    document_title: str = ""
+
+@dataclass
+class Finding:
+    kind: Literal["claim", "mcq", "figure"]
+    section_id: str
+    detail: str
+    suggestion: str = ""
+    item_ref: str = ""
+    correct_answer_text: str = ""
+
+@dataclass
+class VerificationReport:
+    findings: list[Finding]
+    ok: bool
+    checked_revision: int
+
+def invalidate_verification(state: "StudyState") -> None:
+    """Any content mutation invalidates a prior verification pass."""
+    state.content_revision += 1
+    state.verified = False
+    state.verified_revision = -1
+    state.verification_attempts = 0
+    state.verification_findings = []
+    state.verification_findings_revision = -1

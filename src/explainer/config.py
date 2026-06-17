@@ -17,6 +17,10 @@ class Config:
     google_oauth_client_secrets: str = ""
     gdrive_token_path: str = ""
     gdrive_folder_name: str = "Study Lamp"
+    max_verification_attempts: int = 3
+    verifier_max_source_chars: int = 24000
+    verifier_chunk_chars: int = 4000
+    verifier_chunk_overlap: int = 400
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -32,4 +36,8 @@ class Config:
             google_oauth_client_secrets=os.getenv("GOOGLE_OAUTH_CLIENT_SECRETS", ""),
             gdrive_token_path=os.getenv("GDRIVE_TOKEN_PATH", ""),
             gdrive_folder_name=os.getenv("GDRIVE_FOLDER_NAME", "Study Lamp"),
+            max_verification_attempts=int(os.getenv("MAX_VERIFICATION_ATTEMPTS", "3")),
+            verifier_max_source_chars=int(os.getenv("VERIFIER_MAX_SOURCE_CHARS", "24000")),
+            verifier_chunk_chars=int(os.getenv("VERIFIER_CHUNK_CHARS", "4000")),
+            verifier_chunk_overlap=int(os.getenv("VERIFIER_CHUNK_OVERLAP", "400")),
         )

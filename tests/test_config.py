@@ -24,3 +24,11 @@ def test_drive_config(monkeypatch):
     assert cfg.google_oauth_client_secrets == "/tmp/secrets.json"
     assert cfg.gdrive_folder_name == "My Folder"
     assert cfg.gdrive_token_path == ""           # default empty (computed later)
+
+def test_verifier_config_defaults():
+    from explainer.config import Config
+    c = Config(azure_endpoint="e", azure_deployment="d")
+    assert c.max_verification_attempts == 3
+    assert c.verifier_max_source_chars == 24000
+    assert c.verifier_chunk_chars == 4000
+    assert c.verifier_chunk_overlap == 400
