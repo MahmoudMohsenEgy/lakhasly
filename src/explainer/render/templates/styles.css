@@ -39,3 +39,15 @@ ol.timeline li::before { content: ""; position: absolute; right: -1.45rem; top: 
 .tl-label { display: inline-block; font-weight: 700; margin-left: 0.5rem; }
 .tl-text { font-weight: 600; }
 .tl-detail { display: block; color: #555; font-size: 0.9rem; margin-top: 0.2rem; }
+
+.verify-warnings {
+  background: #fff5f5;
+  border: 1px solid #f5c2c2;
+  border-right: 4px solid #c0392b;
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  margin: 1.2rem 0;
+  page-break-inside: avoid;
+}
+.verify-warnings h2 { color: #c0392b; margin-top: 0; }
+.verify-warnings li { margin-bottom: 0.4rem; color: #5a1a1a; font-size: 0.95rem; }

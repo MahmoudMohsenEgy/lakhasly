@@ -284,6 +284,17 @@ def test_verify_reports_findings_and_increments_attempts(tmp_path):
     assert state.verification_findings_revision == state.content_revision
 
 
+def test_verify_surfaces_item_ref_in_findings_message(tmp_path):
+    state = _finalize_ready_state()
+    finding = Finding(kind="claim", section_id="s1", detail="Bad claim",
+                      item_ref="para-3")
+    report = VerificationReport(findings=[finding], ok=False,
+                                checked_revision=state.content_revision)
+    t, _, _, _ = _tools_with_verifier(state, tmp_path, _FakeVerifier(report))
+    msg = t["verify"].invoke({})
+    assert "ref: para-3" in msg
+
+
 def test_verify_discards_stale_report(tmp_path):
     state = _finalize_ready_state()
     report = VerificationReport(findings=[], ok=True, checked_revision=state.content_revision)

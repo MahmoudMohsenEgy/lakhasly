@@ -1,7 +1,8 @@
 import json
+from pathlib import Path
 from langchain_core.messages import AIMessage
 from explainer.config import Config
-from explainer.state import StudyState, Section, MCQ, Figure
+from explainer.state import StudyState, Section, MCQ, Figure, SourceImage
 from explainer.verify.verifier import LLMVerifier
 
 class _FakeModel:
@@ -96,3 +97,46 @@ def test_parse_extracts_first_json_object_with_trailing_text():
     model = _FakeModel([reply])
     rep = LLMVerifier(_FakeProvider(model), _cfg()).verify(_state_one_section())
     assert rep.ok is True
+
+
+def test_reused_source_image_figures_excluded_from_prompt(tmp_path):
+    """Image figures whose path matches a state.images entry must not appear in the prompt."""
+    # Create real temp files so Path.resolve() works
+    img_file = tmp_path / "source_image.png"
+    img_file.write_bytes(b"\x89PNG")
+    mermaid_file = tmp_path / "diagram.svg"
+    mermaid_file.write_text("<svg></svg>", encoding="utf-8")
+
+    captured = {}
+
+    class CapturingModel(_FakeModel):
+        def invoke(self, messages):
+            parts = []
+            for m in messages:
+                if isinstance(m, tuple):
+                    parts.append(m[1])
+                else:
+                    parts.append(getattr(m, "content", str(m)))
+            captured["prompt"] = "\n".join(parts)
+            return AIMessage(content=json.dumps({"findings": []}))
+
+    s = StudyState(source_ref="x")
+    s.normalized_text = "Some source text."
+    # Register the image as a source image
+    s.images = [SourceImage(id="img1", path=str(img_file), caption="Source Fig")]
+    # Section has two figures: one reused source image, one mermaid
+    s.sections = [Section(
+        id="s1", title="Test Section", arabic_html="<p>hello</p>",
+        figures=[
+            Figure(kind="image", path=str(img_file), caption="Reused Image Caption", source=""),
+            Figure(kind="mermaid", path=str(mermaid_file), caption="Mermaid Caption", source="graph TD; A-->B;"),
+        ],
+    )]
+
+    LLMVerifier(_FakeProvider(CapturingModel([])), _cfg()).verify(s)
+
+    prompt = captured["prompt"]
+    # The reused source image figure must NOT appear in the prompt
+    assert "Reused Image Caption" not in prompt
+    # The mermaid figure must appear in the prompt
+    assert "Mermaid Caption" in prompt or "graph TD; A-->B;" in prompt

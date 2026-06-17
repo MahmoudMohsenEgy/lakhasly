@@ -191,6 +191,8 @@ def build_tools(state: StudyState, *, search: SearchClient, diagrams: DiagramRen
         lines = []
         for f in report.findings:
             line = f"- [{f.kind}] section {f.section_id}: {f.detail}"
+            if f.item_ref:
+                line += f" | ref: {f.item_ref}"
             if f.correct_answer_text:
                 line += f" | correct answer: {f.correct_answer_text}"
             if f.suggestion:

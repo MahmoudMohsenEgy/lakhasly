@@ -153,9 +153,9 @@ def test_build_renders_warning_banner_only_when_unresolved():
     s.sections = [Section(id="s1", title="Title", arabic_html="<p>hi</p>")]
 
     without = b.build(s, "Doc")
-    assert "verify-warnings" not in without
+    assert '<section class="verify-warnings">' not in without
 
     finding = Finding(kind="mcq", section_id="s1", detail="answer is wrong")
     with_warn = b.build(s, "Doc", unresolved=[finding])
-    assert "verify-warnings" in with_warn
+    assert '<section class="verify-warnings">' in with_warn
     assert "answer is wrong" in with_warn

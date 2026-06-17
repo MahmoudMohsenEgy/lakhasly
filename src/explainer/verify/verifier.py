@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from pathlib import Path
 from explainer.config import Config
 from explainer.interfaces import LLMProvider
 from explainer.state import StudyState, Section, Finding, VerificationReport
@@ -88,8 +89,10 @@ class LLMVerifier:
                  "marked_answer_text": m.options[m.answer_index]
                  if 0 <= m.answer_index < len(m.options) else "",
                  "explanation": m.explanation} for m in sec.mcqs]
+        source_image_paths = {str(Path(im.path).resolve()) for im in state.images}
         figures = [{"kind": f.kind, "caption": f.caption, "source": f.source}
-                   for f in sec.figures]
+                   for f in sec.figures
+                   if not (f.kind == "image" and str(Path(f.path).resolve()) in source_image_paths)]
         payload = {
             "section_id": sec.id,
             "title": sec.title,
