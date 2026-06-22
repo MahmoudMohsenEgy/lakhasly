@@ -32,3 +32,27 @@ def test_verifier_config_defaults():
     assert c.verifier_max_source_chars == 24000
     assert c.verifier_chunk_chars == 4000
     assert c.verifier_chunk_overlap == 400
+
+def test_auth_config_from_env(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "d")
+    monkeypatch.setenv("STUDYLAMP_PASSWORD_HASH", "salt$hash")
+    monkeypatch.setenv("STUDYLAMP_SECRET_KEY", "s3cret")
+    monkeypatch.setenv("STUDYLAMP_SESSION_DAYS", "7")
+    cfg = Config.from_env()
+    assert cfg.auth_password_hash == "salt$hash"
+    assert cfg.auth_secret_key == "s3cret"
+    assert cfg.auth_session_days == 7
+
+
+def test_auth_config_defaults(monkeypatch):
+    monkeypatch.delenv("STUDYLAMP_PASSWORD_HASH", raising=False)
+    monkeypatch.delenv("STUDYLAMP_SECRET_KEY", raising=False)
+    monkeypatch.delenv("STUDYLAMP_SESSION_DAYS", raising=False)
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "d")
+    cfg = Config.from_env()
+    assert cfg.auth_password_hash == ""
+    assert cfg.auth_secret_key == ""
+    assert cfg.auth_session_days == 30
+    assert cfg.auth_cookie_secure is True

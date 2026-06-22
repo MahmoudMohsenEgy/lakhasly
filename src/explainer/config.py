@@ -21,6 +21,10 @@ class Config:
     verifier_max_source_chars: int = 24000
     verifier_chunk_chars: int = 4000
     verifier_chunk_overlap: int = 400
+    auth_password_hash: str = ""
+    auth_secret_key: str = ""
+    auth_session_days: int = 30
+    auth_cookie_secure: bool = True
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -40,4 +44,7 @@ class Config:
             verifier_max_source_chars=int(os.getenv("VERIFIER_MAX_SOURCE_CHARS", "24000")),
             verifier_chunk_chars=int(os.getenv("VERIFIER_CHUNK_CHARS", "4000")),
             verifier_chunk_overlap=int(os.getenv("VERIFIER_CHUNK_OVERLAP", "400")),
+            auth_password_hash=os.getenv("STUDYLAMP_PASSWORD_HASH", ""),
+            auth_secret_key=os.getenv("STUDYLAMP_SECRET_KEY", ""),
+            auth_session_days=int(os.getenv("STUDYLAMP_SESSION_DAYS", "30")),
         )
