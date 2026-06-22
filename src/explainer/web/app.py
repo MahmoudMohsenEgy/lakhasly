@@ -4,8 +4,12 @@ Serves one page and a small JSON API: start a generation job, poll its status,
 list generated modules, and serve a module's PDF.
 """
 import datetime
+import getpass
 import re
+import sys
 from pathlib import Path
+
+import uvicorn
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -122,9 +126,24 @@ def create_app(config: Config | None = None, manager: JobManager | None = None,
     return app
 
 
-def run() -> None:
-    import uvicorn
-    uvicorn.run(create_app(), host="127.0.0.1", port=8000)
+def run(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+
+    if argv and argv[0] == "hash-password":
+        from explainer.web.auth import hash_password
+        pw = getpass.getpass("New Study Lamp password: ")
+        print(hash_password(pw))
+        return
+
+    config = Config.from_env()
+    if not (config.auth_password_hash and config.auth_secret_key):
+        print("ERROR: set STUDYLAMP_PASSWORD_HASH and STUDYLAMP_SECRET_KEY before "
+              "starting the server.\nGenerate a password hash with: explain-web hash-password\n"
+              "Generate a secret key with: python -c \"import secrets; print(secrets.token_hex(32))\"",
+              file=sys.stderr)
+        raise SystemExit(1)
+
+    uvicorn.run(create_app(config), host="127.0.0.1", port=8000)
 
 
 if __name__ == "__main__":
