@@ -5,12 +5,17 @@ scrypt; the login session is a short hmac-signed, timestamped cookie. No
 server-side session store, so it stays compatible with the single-process,
 in-memory-job deployment.
 """
+import asyncio
 import base64
 import binascii
 import hashlib
 import hmac
 import os
 import time
+from pathlib import Path
+
+from fastapi import Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 _SCRYPT_N = 2 ** 14
 _SCRYPT_R = 8
@@ -71,3 +76,54 @@ class SessionCodec:
             return False
         current = int(time.time() if now is None else now)
         return 0 <= current - issued <= self._max_age
+
+
+COOKIE_NAME = "studylamp_session"
+_PUBLIC_PREFIXES = ("/static",)
+_PUBLIC_PATHS = ("/login", "/logout")
+_FAILED_LOGIN_DELAY = 0.25  # seconds; blunts rapid password guessing
+
+
+def install_auth(app, config) -> bool:
+    """Wire the single-password gate onto the app. No-op (returns False) unless
+    both a password hash and a secret key are configured."""
+    if not (config.auth_password_hash and config.auth_secret_key):
+        return False
+
+    codec = SessionCodec(config.auth_secret_key, config.auth_session_days)
+    login_html = (Path(__file__).parent / "static" / "login.html").read_text(encoding="utf-8")
+
+    @app.middleware("http")
+    async def _gate(request: Request, call_next):
+        path = request.url.path
+        if path in _PUBLIC_PATHS or path.startswith(_PUBLIC_PREFIXES):
+            return await call_next(request)
+        if codec.read(request.cookies.get(COOKIE_NAME, "")):
+            return await call_next(request)
+        if path.startswith("/api/"):
+            return JSONResponse({"detail": "Authentication required."}, status_code=401)
+        return RedirectResponse("/login", status_code=303)
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login_page() -> str:
+        return login_html
+
+    @app.post("/login")
+    async def login_submit(request: Request):
+        form = await request.form()
+        if verify_password(form.get("password", ""), config.auth_password_hash):
+            resp = RedirectResponse("/", status_code=303)
+            resp.set_cookie(COOKIE_NAME, codec.issue(), httponly=True,
+                            samesite="lax", secure=config.auth_cookie_secure,
+                            max_age=config.auth_session_days * 86400)
+            return resp
+        await asyncio.sleep(_FAILED_LOGIN_DELAY)
+        return RedirectResponse("/login?error=1", status_code=303)
+
+    @app.post("/logout")
+    def logout():
+        resp = RedirectResponse("/login", status_code=303)
+        resp.delete_cookie(COOKIE_NAME)
+        return resp
+
+    return True

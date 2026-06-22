@@ -16,6 +16,7 @@ from explainer.config import Config
 from explainer.uploaders.factory import build_uploader
 from explainer.web import library
 from explainer.web import thumbnails
+from explainer.web.auth import install_auth
 from explainer.web.jobs import JobManager
 
 _STATIC = Path(__file__).parent / "static"
@@ -116,6 +117,7 @@ def create_app(config: Config | None = None, manager: JobManager | None = None,
         library.set_drive_link(modules_dir, module_id, result.get("link", ""))
         return {"link": result.get("link", "")}
 
+    install_auth(app, config)
     app.mount("/static", StaticFiles(directory=str(_STATIC)), name="static")
     return app
 
