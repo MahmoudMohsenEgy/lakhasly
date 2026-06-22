@@ -79,7 +79,6 @@ class SessionCodec:
 
 
 COOKIE_NAME = "studylamp_session"
-_PUBLIC_PREFIXES = ("/static",)
 _PUBLIC_PATHS = ("/login", "/logout")
 _FAILED_LOGIN_DELAY = 0.25  # seconds; blunts rapid password guessing
 
@@ -96,7 +95,7 @@ def install_auth(app, config) -> bool:
     @app.middleware("http")
     async def _gate(request: Request, call_next):
         path = request.url.path
-        if path in _PUBLIC_PATHS or path.startswith(_PUBLIC_PREFIXES):
+        if path in _PUBLIC_PATHS or path == "/static" or path.startswith("/static/"):
             return await call_next(request)
         if codec.read(request.cookies.get(COOKIE_NAME, "")):
             return await call_next(request)
@@ -123,7 +122,8 @@ def install_auth(app, config) -> bool:
     @app.post("/logout")
     def logout():
         resp = RedirectResponse("/login", status_code=303)
-        resp.delete_cookie(COOKIE_NAME)
+        resp.delete_cookie(COOKIE_NAME, httponly=True, samesite="lax",
+                           secure=config.auth_cookie_secure)
         return resp
 
     return True
