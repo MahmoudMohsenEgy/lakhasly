@@ -62,3 +62,10 @@ def test_gate_disabled_when_unconfigured(tmp_path):
     cfg = Config(azure_endpoint="x", azure_deployment="d", output_dir=str(tmp_path))
     client = TestClient(create_app(cfg))
     assert client.get("/api/modules").status_code == 200
+
+
+def test_api_js_redirects_on_401(tmp_path):
+    # The shipped api.js must route 401s to the login page.
+    js = _client(tmp_path).get("/static/js/api.js").text
+    assert "/login" in js
+    assert "401" in js
