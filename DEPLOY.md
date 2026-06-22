@@ -69,12 +69,25 @@ ingress:
 Cloudflare provisions the TLS certificate automatically. Visit
 `https://studylamp.mohsen-group.com`.
 
-### Optional: require login
+### Login
 
-In Zero Trust → **Access → Applications**, add a self-hosted app for
-`studylamp.mohsen-group.com` with a policy (e.g. allow your email / Google login).
-This puts an auth gate in front of the whole site — the app itself has no user
-accounts.
+The app gates the whole site behind a single shared password. Set two secrets in
+`.env` before starting the server (it refuses to start without them):
+
+```bash
+explain-web hash-password    # prompts for the password, prints the hash
+python -c "import secrets; print(secrets.token_hex(32))"   # a random secret key
+```
+
+```
+STUDYLAMP_PASSWORD_HASH=<output of hash-password>
+STUDYLAMP_SECRET_KEY=<output of token_hex>
+STUDYLAMP_SESSION_DAYS=30   # optional, default 30
+```
+
+Everyone who knows the password can sign in at `/login`; the library is shared.
+To revoke access, rotate `STUDYLAMP_PASSWORD_HASH` (and `STUDYLAMP_SECRET_KEY`
+to log everyone out at once) and re-share the new password.
 
 ## Updating
 
