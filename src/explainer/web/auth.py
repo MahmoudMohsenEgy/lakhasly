@@ -10,6 +10,7 @@ import binascii
 import hashlib
 import hmac
 import os
+import time
 
 _SCRYPT_N = 2 ** 14
 _SCRYPT_R = 8
@@ -42,3 +43,31 @@ def verify_password(plaintext: str, stored: str) -> bool:
     if not salt or not expected:
         return False
     return hmac.compare_digest(_scrypt(plaintext, salt), expected)
+
+
+class SessionCodec:
+    """Mints and validates hmac-signed, timestamped session cookies."""
+
+    def __init__(self, secret_key: str, max_age_days: int = 30) -> None:
+        self._key = secret_key.encode("utf-8")
+        self._max_age = max_age_days * 86400
+
+    def _sign(self, msg: str) -> str:
+        return hmac.new(self._key, msg.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def issue(self, now: float | None = None) -> str:
+        ts = str(int(time.time() if now is None else now))
+        return f"{ts}.{self._sign(ts)}"
+
+    def read(self, cookie: str, now: float | None = None) -> bool:
+        if not cookie or "." not in cookie:
+            return False
+        ts, sig = cookie.rsplit(".", 1)
+        if not hmac.compare_digest(sig, self._sign(ts)):
+            return False
+        try:
+            issued = int(ts)
+        except ValueError:
+            return False
+        current = int(time.time() if now is None else now)
+        return 0 <= current - issued <= self._max_age
